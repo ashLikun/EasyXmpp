@@ -10,8 +10,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import com.ashlikun.easyxmpp.EasyXmppManage;
+import com.ashlikun.easyxmpp.ConnectionCallback;
+import com.ashlikun.easyxmpp.EXmppChatManage;
+import com.ashlikun.easyxmpp.EXmppManage;
+import com.ashlikun.easyxmpp.EasyXmppConfig;
+import com.ashlikun.easyxmpp.LoginCallback;
 
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.chat2.Chat;
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener;
 import org.jivesoftware.smack.chat2.OutgoingChatMessageListener;
@@ -23,8 +28,6 @@ import org.jxmpp.jid.EntityBareJid;
  */
 public class MainActivity extends Activity {
     private StringBuilder messageSb = new StringBuilder();
-
-    private EasyXmppManage xmppManage;
     /**
      * 回调时使用
      */
@@ -58,12 +61,12 @@ public class MainActivity extends Activity {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                EasyXmppManage.sendMessage("zhaoyang", "我是李坤2,这是第几条" + count);
+                EXmppChatManage.get().sendMessage("zhaoyang", "我是李坤2,这是第几条" + count);
                 count++;
                 if (count >= 10000) {
                     return;
                 }
-                sendMessage();
+               // sendMessage();
             }
         }, 50);
     }
@@ -76,31 +79,49 @@ public class MainActivity extends Activity {
      * 构建EasyMqttService对象
      */
     private void buildEasyMqttService() {
-        EasyXmppManage.init();
+        EasyXmppConfig.Builder.create(getApplication())
+                .host("xmpp.o6o6o.com")
+                .isDebug(true)
+                .apply();
+        EXmppManage.get().getCm().addCallback(new ConnectionCallback() {
+            @Override
+            public void connected(XMPPConnection connection) {
+                EXmppManage.get().getCm().login("likun", "likun", new LoginCallback() {
+                    @Override
+                    public void loginError(String userName, String password, Throwable throwable) {
 
-        EasyXmppManage.addIncomingListener(new IncomingChatMessageListener() {
+                    }
+
+                    @Override
+                    public void loginSuccess(String userName, String password) {
+
+                    }
+                });
+            }
+
+            @Override
+            public void connectionError(Exception connection) {
+
+            }
+        });
+        EXmppChatManage.get().addIncomingListener(new IncomingChatMessageListener() {
             @Override
             public void newIncomingMessage(final EntityBareJid from, final Message message, Chat chat) {
                 Log.e("new from", from.toString());
                 Log.e("new message", message.toString());
-                textViewTopic.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        textViewTopic.setText("发送者:" + from.getLocalpart().toString());
-                        messageSb.append(message.getBody());
-                        messageSb.append("\n");
-                        textView.setText(messageSb);
-                    }
-                });
-
+                textViewTopic.setText("发送者:" + from.getLocalpart().toString());
+                messageSb.append(message.getBody());
+                messageSb.append("\n");
+                textView.setText(messageSb);
             }
         });
-        EasyXmppManage.addOutgoingListener(new OutgoingChatMessageListener() {
+        EXmppChatManage.get().addOutgoingListener(new OutgoingChatMessageListener() {
             @Override
             public void newOutgoingMessage(EntityBareJid to, Message message, Chat chat) {
                 Log.e("new to", to.toString());
                 Log.e("new message", message.toString());
             }
         });
+
     }
 }
