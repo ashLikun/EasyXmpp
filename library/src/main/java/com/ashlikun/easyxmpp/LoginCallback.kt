@@ -1,20 +1,21 @@
-package com.ashlikun.easyxmpp;
+package com.ashlikun.easyxmpp
 
 /**
  * 作者　　: 李坤
  * 创建时间: 2018/11/26　15:21
  * 邮箱　　：496546144@qq.com
- * <p>
+ *
+ *
  * 功能介绍：登录状态的回调
  */
-public interface LoginCallback {
+interface LoginCallback {
     /**
      * 登录失败
      *
      * @param userName 用户名
      * @param password 密码
      */
-    void loginError(String userName, String password,Throwable throwable);
+    fun loginError(userName: String, password: String, throwable: Throwable)
 
     /**
      * 登录成功
@@ -22,5 +23,5 @@ public interface LoginCallback {
      * @param userName 用户名
      * @param password 密码
      */
-    void loginSuccess(String userName, String password);
+    fun loginSuccess(userName: String, password: String)
 }

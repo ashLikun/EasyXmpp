@@ -61,12 +61,12 @@ public class MainActivity extends Activity {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                EXmppChatManage.get().sendMessage("zhaoyang", "我是李坤2,这是第几条" + count);
+                EXmppChatManage.Companion.get().sendMessage("zhaoyang", "我是李坤2,这是第几条" + count);
                 count++;
                 if (count >= 10000) {
                     return;
                 }
-               // sendMessage();
+                // sendMessage();
             }
         }, 50);
     }
@@ -79,22 +79,22 @@ public class MainActivity extends Activity {
      * 构建EasyMqttService对象
      */
     private void buildEasyMqttService() {
-        EasyXmppConfig.Builder.create(getApplication())
+        EasyXmppConfig.Builder.Companion.create(getApplication())
                 .host("xmpp.o6o6o.com")
                 .isDebug(true)
                 .apply();
-        EXmppManage.get().getCm().addCallback(new ConnectionCallback() {
+        EXmppManage.Companion.get().getCm().addCallback(new ConnectionCallback() {
             @Override
             public void connected(XMPPConnection connection) {
-                EXmppManage.get().getCm().login("likun", "likun", new LoginCallback() {
+                EXmppManage.Companion.get().getCm().login("likun", "likun", new LoginCallback() {
                     @Override
                     public void loginError(String userName, String password, Throwable throwable) {
-
+                        Log.e("loginError", "userName" + "   " + password);
                     }
 
                     @Override
                     public void loginSuccess(String userName, String password) {
-
+                        Log.e("loginSuccess", "userName" + "   " + password);
                     }
                 });
             }
@@ -104,7 +104,7 @@ public class MainActivity extends Activity {
 
             }
         });
-        EXmppChatManage.get().addIncomingListener(new IncomingChatMessageListener() {
+        EXmppChatManage.Companion.get().addIncomingListener(new IncomingChatMessageListener() {
             @Override
             public void newIncomingMessage(final EntityBareJid from, final Message message, Chat chat) {
                 Log.e("new from", from.toString());
@@ -115,7 +115,7 @@ public class MainActivity extends Activity {
                 textView.setText(messageSb);
             }
         });
-        EXmppChatManage.get().addOutgoingListener(new OutgoingChatMessageListener() {
+        EXmppChatManage.Companion.get().addOutgoingListener(new OutgoingChatMessageListener() {
             @Override
             public void newOutgoingMessage(EntityBareJid to, Message message, Chat chat) {
                 Log.e("new to", to.toString());
