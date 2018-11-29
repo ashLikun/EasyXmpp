@@ -1,5 +1,7 @@
 package com.ashlikun.easyxmpp
 
+import com.ashlikun.easyxmpp.data.ChatMessage
+import com.ashlikun.easyxmpp.status.MessageStatus
 import io.reactivex.functions.Consumer
 import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.chat2.Chat
@@ -64,17 +66,25 @@ class EXmppChatManage private constructor() : IncomingChatMessageListener, Outgo
      * 发送一条消息给Chat
      */
     fun sendMessage(name: String, content: Message): Boolean {
-        try {
-            val chat = getChat(name)
-            chat?.send(content)
-            return chat != null
-        } catch (e: SmackException.NotConnectedException) {
-            e.printStackTrace()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+        return if (content == null) false else
+            try {
+                //先保存数据库
+                var chatMessage = ChatMessage(content.stanzaId,
+                        MessageStatus.SENDING,
+                        content.body,
+                        name,
+                        )
+                val chat = getChat(name)
+                chat?.send(content)
+                chat != null
+            } catch (e: SmackException.NotConnectedException) {
+                e.printStackTrace()
+                false
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+                false
+            }
 
-        return false
     }
 
     /**

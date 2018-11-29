@@ -1,5 +1,7 @@
 package com.ashlikun.easyxmpp.data
 
+import com.ashlikun.easyxmpp.status.MessageStatus
+import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.annotation.PrimaryKey
 import com.ashlikun.orm.db.annotation.Table
 import com.ashlikun.orm.db.enums.AssignType
@@ -14,8 +16,16 @@ import org.json.JSONObject
  */
 @Table("UserData")
 data class ChatMessage(
-        @PrimaryKey(AssignType.AUTO_INCREMENT)
-        var id: Long,
+        /**
+         * xmpp的消息id
+         */
+        @PrimaryKey(AssignType.BY_MYSELF)
+        var messageId: String,
+        /**
+         * 消息状态
+         */
+        @MessageStatus.Code
+        var messageStatus: Int,
         /**
          * 消息内容
          * 这是个json
@@ -49,5 +59,11 @@ data class ChatMessage(
         } catch (e: Exception) {
             null
         }
+    }
+
+    fun save() {
+//        LiteOrmUtil.get().delete(WhereBuilder.create(ChatMessage::class.java).where("messageId=?",messageId)
+//                .where())
+        LiteOrmUtil.get().save(this)
     }
 }
