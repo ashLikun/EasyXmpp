@@ -1,4 +1,4 @@
-package com.ashlikun.easyxmpp
+package com.ashlikun.easyxmpp.listener
 
 import org.jivesoftware.smack.ConnectionListener
 import org.jivesoftware.smack.XMPPConnection

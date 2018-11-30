@@ -1,14 +1,12 @@
 package com.ashlikun.easyxmpp
 
-import android.text.TextUtils
-import android.util.Log
+import com.ashlikun.easyxmpp.data.User
+import com.ashlikun.easyxmpp.listener.ConnectionCallback
+import com.ashlikun.easyxmpp.listener.ExConnectionListener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import org.jivesoftware.smack.AbstractConnectionListener
-import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -20,28 +18,26 @@ import java.util.concurrent.TimeUnit
  * 功能介绍：连接管理器,对应连接的一些操作
  * 连接服务器，登录
  */
-class EXmppConnectionManage internal constructor(
-        /**
-         * 整个Xmpp  tcp连接
-         */
-        var connection: XMPPTCPConnection) : AbstractConnectionListener() {
+class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnection) {
 
-    var callbackList: MutableList<ConnectionCallback> = ArrayList()
+    private var callbackListener = ExConnectionListener()
     /**
      * 失败累计计数
      */
-    private var count = 1f
+    private var count = 1
     /**
-     * 用户名与密码
+     * 用户信息
      */
-    private var userName: String = ""
-    /**
-     * 获取密码
-     */
-    private var password: String = ""
+    var userData: User = User()
+        private set
 
-    private val time: Int
-        get() = (EXmppManage.get().config.reconnectionTime * count).toInt()
+
+    init {
+        connection.addConnectionListener(callbackListener)
+    }
+
+
+    private fun getTime(): Long = EXmppManage.get().config.reconnectionTime * count
 
     /**
      * 是否登录
@@ -93,12 +89,12 @@ class EXmppConnectionManage internal constructor(
         if (!EXmppManage.get().config.isReconnection) {
             return
         }
-        count = 1f
+        count = 1
         start()
     }
 
     private fun start() {
-        Observable.timer(time.toLong(), TimeUnit.MILLISECONDS)
+        Observable.timer(getTime(), TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.newThread())
                 .subscribe({
                     if (!EXmppManage.isConnected()) {
@@ -115,15 +111,16 @@ class EXmppConnectionManage internal constructor(
      * 登录
      */
     fun login(callback: LoginCallback?) {
-        login(userName, password, callback)
+        userData.run {
+            login(userName, password, callback)
+        }
     }
 
     /**
-     * 登录,如果失败在重新连接的时候会登录
+     * 登录,请在失败的时候自己处理
      */
     fun login(userName: String, password: String, callback: LoginCallback?) {
-        this.userName = userName
-        this.password = password
+        userData = User(userName, password)
         Observable.just(1)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -149,80 +146,11 @@ class EXmppConnectionManage internal constructor(
      * @param callback
      */
     fun addCallback(callback: ConnectionCallback) {
-        if (!callbackList.contains(callback)) {
-            callbackList.add(callback)
-        }
+        callbackListener.addCallback(callback)
     }
 
     fun removeCallback(callback: ConnectionCallback) {
-        if (callbackList.contains(callback)) {
-            callbackList.remove(callback)
-        }
+        callbackListener.removeCallback(callback);
     }
 
-    fun setUserName(userName: String, password: String) {
-        this.userName = userName
-        this.password = password
-    }
-
-    override fun connected(connection: XMPPConnection) {
-        super.connected(connection)
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(TAG, "连接成功")
-        }
-        //如果有登录信息会再次登录
-        if (!TextUtils.isEmpty(userName) && !TextUtils.isEmpty(password)) {
-            if (EXmppManage.isConnected() && !EXmppManage.isAuthenticated()) {
-                login(null)
-            }
-        }
-        for (callback in callbackList) {
-            callback.connected(connection)
-        }
-    }
-
-    /**
-     * 登录成功
-     *
-     * @param connection
-     * @param resumed
-     */
-    override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
-        super.authenticated(connection, resumed)
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(TAG, "authenticated$resumed")
-        }
-    }
-
-    /**
-     * 连接关闭
-     */
-    override fun connectionClosed() {
-        super.connectionClosed()
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(TAG, "connectionClosed")
-        }
-        for (callback in callbackList) {
-            callback.connectionError(Exception("connection is closed"))
-        }
-    }
-
-    /**
-     * 连接错误
-     *
-     * @param e
-     */
-    override fun connectionClosedOnError(e: Exception) {
-        super.connectionClosedOnError(e)
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(TAG, "connectionClosedOnError" + e.toString())
-        }
-        for (callback in callbackList) {
-            callback.connectionError(e)
-        }
-    }
-
-    companion object {
-        val TAG = "EXmppConnectionManage"
-    }
 }

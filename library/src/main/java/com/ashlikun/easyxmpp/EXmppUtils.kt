@@ -6,6 +6,8 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * 作者　　: 李坤
@@ -16,6 +18,8 @@ import io.reactivex.schedulers.Schedulers
  * 功能介绍：
  */
 internal object EXmppUtils {
+    private val datetimeFormat = SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss")
 
     /**
      * 是否有网络连接
@@ -67,6 +71,14 @@ internal object EXmppUtils {
      * 获取一个人员在xmpp的名字
      */
     fun getJidName(name: String): String {
-        return "$name@${EXmppManage.get().domain}"
+        return "$name@${EXmppManage.get().getDomain()}"
+    }
+
+    /**
+     * 格式化日期时间
+     * 日期时间格式yyyy-MM-dd HH:mm:ss
+     */
+    fun formatDatetime(date: Date): String {
+        return datetimeFormat.format(date)
     }
 }

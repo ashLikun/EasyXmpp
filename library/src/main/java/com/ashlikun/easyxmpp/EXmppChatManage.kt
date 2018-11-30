@@ -1,17 +1,18 @@
 package com.ashlikun.easyxmpp
 
 import com.ashlikun.easyxmpp.data.ChatMessage
+import com.ashlikun.easyxmpp.listener.ExMessageListener
 import com.ashlikun.easyxmpp.status.MessageStatus
-import io.reactivex.functions.Consumer
+import com.ashlikun.orm.LiteOrmUtil
+import com.ashlikun.orm.db.assit.QueryBuilder
 import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.chat2.Chat
+import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener
 import org.jivesoftware.smack.chat2.OutgoingChatMessageListener
 import org.jivesoftware.smack.packet.Message
-import org.jxmpp.jid.EntityBareJid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.stringprep.XmppStringprepException
-import java.util.concurrent.CopyOnWriteArraySet
 
 /**
  * 作者　　: 李坤
@@ -22,29 +23,32 @@ import java.util.concurrent.CopyOnWriteArraySet
  * 功能介绍：聊天管理器
  * 对应消息的操作都在这
  */
-class EXmppChatManage private constructor() : IncomingChatMessageListener, OutgoingChatMessageListener {
+class EXmppChatManage private constructor() {
     companion object {
         private val instance by lazy { EXmppChatManage() }
+        /**
+         * 聊天管理器
+         */
+        private val chatManager by lazy { ChatManager.getInstanceFor(EXmppManage.getCM().connection) }
+
         fun get(): EXmppChatManage = instance
+        fun getCm(): ChatManager = chatManager
     }
+
+
+    private var messageListener = ExMessageListener()
 
     /**
-     * 这2个是切换主线程的回调
+     * 获取聊天管理器
      */
-    private val incomingListeners = CopyOnWriteArraySet<IncomingChatMessageListener>()
-    private val outgoingListeners = CopyOnWriteArraySet<OutgoingChatMessageListener>()
-
-    init {
-        addIncomingListenerSubThread(this)
-        addOutgoingListenerSubThread(this)
-    }
+    fun getChatM(): ChatManager = chatManager
 
     /**
      * 获取一个Chat
      */
     fun getChat(name: String): Chat? {
         try {
-            return EXmppManage.get().chatManager.chatWith(JidCreate.entityBareFrom(EXmppUtils.getJidName(name)))
+            return chatManager.chatWith(JidCreate.entityBareFrom(EXmppUtils.getJidName(name)))
         } catch (e: XmppStringprepException) {
             e.printStackTrace()
         }
@@ -66,25 +70,55 @@ class EXmppChatManage private constructor() : IncomingChatMessageListener, Outgo
      * 发送一条消息给Chat
      */
     fun sendMessage(name: String, content: Message): Boolean {
-        return if (content == null) false else
+        return if (!EXmppManage.isConnected()) false else
             try {
-                //先保存数据库
-                var chatMessage = ChatMessage(content.stanzaId,
-                        MessageStatus.SENDING,
-                        content.body,
-                        name,
-                        )
-                val chat = getChat(name)
-                chat?.send(content)
-                chat != null
+                val chat = getChat(name) ?: return false
+                if (content.to == null) {
+                    content.to = chat.xmppAddressOfChatPartner
+                }
+                //先保存数据库,在发送回调的时候再改变状态
+                var chatMessage = ChatMessage.getMySendMessage(content);
+                if (chatMessage.save()) {
+                    chat.send(content)
+                }
+                true
             } catch (e: SmackException.NotConnectedException) {
                 e.printStackTrace()
+                ChatMessage.changMessageStatus(content, MessageStatus.ERROR)
                 false
             } catch (e: InterruptedException) {
                 e.printStackTrace()
+                ChatMessage.changMessageStatus(content, MessageStatus.ERROR)
                 false
             }
+    }
 
+    /**
+     * 查询当前用户对应的所有消息
+     */
+    fun findMessage(): List<ChatMessage>? {
+        return if (!EXmppManage.isAuthenticated()) null else try {
+            LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                    .where("meUsername = ?", EXmppManage.getCM().userData.getUser())
+                    .orderBy("dataTime"))
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * 查询当前用户对应的所有消息
+     * @param friendUsername 对方名字
+     */
+    fun findMessage(friendUsername: String): List<ChatMessage>? {
+        return if (!EXmppManage.isAuthenticated()) null else try {
+            LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                    .where("meUsername = ?", EXmppManage.getCM().userData.getUser())
+                    .where("friendUsername = ?", friendUsername)
+                    .orderBy("dataTime"))
+        } catch (e: Exception) {
+            null
+        }
     }
 
     /**
@@ -94,12 +128,11 @@ class EXmppChatManage private constructor() : IncomingChatMessageListener, Outgo
      * @param listener
      */
     fun addIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        EXmppManage.get().chatManager.removeIncomingListener(listener)
-        EXmppManage.get().chatManager.addIncomingListener(listener)
+        messageListener.addIncomingListenerSubThread(listener)
     }
 
     fun removeIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        EXmppManage.get().chatManager.removeIncomingListener(listener)
+        messageListener.removeIncomingListenerSubThread(listener)
     }
 
     /**
@@ -109,15 +142,11 @@ class EXmppChatManage private constructor() : IncomingChatMessageListener, Outgo
      * @param listener
      */
     fun addIncomingListener(listener: IncomingChatMessageListener) {
-        if (!incomingListeners.contains(listener)) {
-            incomingListeners.add(listener)
-        }
+        messageListener.addIncomingListener(listener)
     }
 
     fun removeIncomingListener(listener: IncomingChatMessageListener) {
-        if (incomingListeners.contains(listener)) {
-            incomingListeners.remove(listener)
-        }
+        messageListener.removeIncomingListener(listener)
     }
 
     /**
@@ -127,12 +156,11 @@ class EXmppChatManage private constructor() : IncomingChatMessageListener, Outgo
      * @param listener
      */
     fun addOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        EXmppManage.get().chatManager.removeOutgoingListener(listener)
-        EXmppManage.get().chatManager.addOutgoingListener(listener)
+        messageListener.addOutgoingListenerSubThread(listener)
     }
 
     fun removeOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        EXmppManage.get().chatManager.removeOutgoingListener(listener)
+        messageListener.removeOutgoingListenerSubThread(listener)
     }
 
     /**
@@ -142,31 +170,11 @@ class EXmppChatManage private constructor() : IncomingChatMessageListener, Outgo
      * @param listener
      */
     fun addOutgoingListener(listener: OutgoingChatMessageListener) {
-        if (!outgoingListeners.contains(listener)) {
-            outgoingListeners.add(listener)
-        }
+        messageListener.addOutgoingListener(listener)
     }
 
     fun removeOutgoingListener(listener: OutgoingChatMessageListener) {
-        if (outgoingListeners.contains(listener)) {
-            outgoingListeners.remove(listener)
-        }
+        messageListener.removeOutgoingListener(listener)
     }
 
-    override fun newIncomingMessage(from: EntityBareJid, message: Message, chat: Chat) {
-        //回调主线程
-        EXmppUtils.runMain(Consumer {
-            for (listener in incomingListeners) {
-                listener.newIncomingMessage(from, message, chat)
-            }
-        })
-    }
-
-    override fun newOutgoingMessage(to: EntityBareJid, message: Message, chat: Chat) {
-        EXmppUtils.runMain(Consumer {
-            for (listener in outgoingListeners) {
-                listener.newOutgoingMessage(to, message, chat)
-            }
-        })
-    }
 }

@@ -1,7 +1,6 @@
 package com.ashlikun.easyxmpp
 
 import org.jivesoftware.smack.ReconnectionManager
-import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jivesoftware.smackx.offline.OfflineMessageManager
@@ -19,26 +18,41 @@ class EXmppManage private constructor() {
     companion object {
         private val instance by lazy { EXmppManage() }
         fun get(): EXmppManage = instance
+        /**
+         * 离线管理器
+         */
+        fun getOM(): OfflineMessageManager = get().offlineMessageManager
+
+        /**
+         * 重新连接管理器
+         */
+        fun getRM(): ReconnectionManager = get().reconnectionManager
+
+        /**
+         * 自己封装的聊天管理器
+         */
+        fun getChatM(): EXmppChatManage = EXmppChatManage.get()
+
+        /**
+         * 获取内部的连接管理器
+         */
+        fun getCM(): EXmppConnectionManage = get().connectionManage
+
         fun connect() {
-            get().cm.connect()
+            getCM().connect()
         }
 
         /**
          * 是否登录
          */
-        fun isAuthenticated(): Boolean = get().cm.isAuthenticated
+        fun isAuthenticated(): Boolean = getCM().isAuthenticated
 
         /**
          * 是否连接
          */
-        fun isConnected(): Boolean = get().cm.isConnected
+        fun isConnected(): Boolean = getCM().isConnected
     }
 
-    /**
-     * 获取聊天管理器
-     */
-    lateinit var chatManager: ChatManager
-        internal set
 
     /**
      * 重新连接管理器
@@ -58,11 +72,10 @@ class EXmppManage private constructor() {
     /**
      * 获取内部的连接管理器
      */
-    lateinit var cm: EXmppConnectionManage
+    lateinit var connectionManage: EXmppConnectionManage
         internal set
 
-    val domain: String
-        get() = cm.domain
+    fun getDomain(): String = connectionManage.domain
 
 
     internal fun init(configuration: XMPPTCPConnectionConfiguration, config: EasyXmppConfig) {
@@ -70,11 +83,10 @@ class EXmppManage private constructor() {
         val connection = XMPPTCPConnection(configuration)
         //设置答复超时
         connection.replyTimeout = config.replyTimeout.toLong()
-        cm = EXmppConnectionManage(connection)
-        connection.addConnectionListener(cm)
-        chatManager = ChatManager.getInstanceFor(connection)
+        connectionManage = EXmppConnectionManage(connection)
         reconnectionManager = ReconnectionManager.getInstanceFor(connection)
         offlineMessageManager = OfflineMessageManager(connection)
-        cm.connect()
+        EXmppChatManage.get()
+        connectionManage.connect()
     }
 }
