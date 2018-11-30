@@ -32,16 +32,10 @@ class EXmppChatManage private constructor() {
         private val chatManager by lazy { ChatManager.getInstanceFor(EXmppManage.getCM().connection) }
 
         fun get(): EXmppChatManage = instance
-        fun getCm(): ChatManager = chatManager
+        fun getChatM(): ChatManager = chatManager
     }
 
-
     private var messageListener = ExMessageListener()
-
-    /**
-     * 获取聊天管理器
-     */
-    fun getChatM(): ChatManager = chatManager
 
     /**
      * 获取一个Chat
@@ -52,7 +46,6 @@ class EXmppChatManage private constructor() {
         } catch (e: XmppStringprepException) {
             e.printStackTrace()
         }
-
         return null
     }
 

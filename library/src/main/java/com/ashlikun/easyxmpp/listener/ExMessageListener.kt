@@ -38,12 +38,12 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
      * @param listener
      */
     fun addIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        EXmppChatManage.getCm().removeIncomingListener(listener)
-        EXmppChatManage.getCm().addIncomingListener(listener)
+        EXmppChatManage.getChatM().removeIncomingListener(listener)
+        EXmppChatManage.getChatM().addIncomingListener(listener)
     }
 
     fun removeIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        EXmppChatManage.getCm().removeIncomingListener(listener)
+        EXmppChatManage.getChatM().removeIncomingListener(listener)
     }
 
     /**
@@ -53,12 +53,12 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
      * @param listener
      */
     fun addOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        EXmppChatManage.getCm().removeOutgoingListener(listener)
-        EXmppChatManage.getCm().addOutgoingListener(listener)
+        EXmppChatManage.getChatM().removeOutgoingListener(listener)
+        EXmppChatManage.getChatM().addOutgoingListener(listener)
     }
 
     fun removeOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        EXmppChatManage.getCm().removeOutgoingListener(listener)
+        EXmppChatManage.getChatM().removeOutgoingListener(listener)
     }
 
     /**
