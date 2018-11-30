@@ -1,4 +1,4 @@
-package com.ashlikun.easyxmpp.mqtt.demo
+package com.ashlikun.easyxmpp.demo
 
 import android.app.Application
 import com.ashlikun.orm.LiteOrmUtil

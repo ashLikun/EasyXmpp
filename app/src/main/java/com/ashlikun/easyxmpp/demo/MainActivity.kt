@@ -1,4 +1,4 @@
-package com.ashlikun.easyxmpp.mqtt.demo
+package com.ashlikun.easyxmpp.demo
 
 import android.Manifest
 import android.app.Activity
@@ -44,7 +44,7 @@ class MainActivity : Activity() {
                     arrayOf(Manifest.permission.READ_PHONE_STATE),
                     MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
         }
-        buildEasyMqttService()
+        buildEasyXmppService()
         findViewById<View>(R.id.sendButton).setOnClickListener { sendMessage() }
         findViewById<View>(R.id.offlineButton).setOnClickListener { offlineMessage() }
 
@@ -76,9 +76,9 @@ class MainActivity : Activity() {
 
 
     /**
-     * 构建EasyMqttService对象
+     * 构建对象
      */
-    private fun buildEasyMqttService() {
+    private fun buildEasyXmppService() {
         EasyXmppConfig.Builder.create(application)
                 .host("xmpp.o6o6o.com")
                 .isDebug(true)

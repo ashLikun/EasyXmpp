@@ -20,6 +20,10 @@ import java.util.concurrent.TimeUnit
  */
 class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnection) {
 
+    companion object {
+        const val TAG = "EXmppConnectionManage"
+    }
+
     private var callbackListener = ExConnectionListener()
     /**
      * 失败累计计数
