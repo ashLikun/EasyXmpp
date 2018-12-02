@@ -21,9 +21,8 @@ import java.util.logging.Logger
  * 创建时间: 2018/12/2 17:50
  * 邮箱　　：496546144@qq.com
  *
- * 功能介绍：改官方的重连机制
+ * 功能介绍：重连机制
  */
-
 class EasyReconnectionManager private constructor(connection: AbstractXMPPConnection) {
 
     /**
@@ -102,11 +101,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     }
 
     init {
-        //接收到服务器通知我离线的监听
-        connection.addAsyncStanzaListener(offlineListener, PresenceTypeFilter.UNAVAILABLE)
-        //心跳包失败后再次启动
-        PingManager.getInstanceFor(connection).registerPingFailedListener(pingFailedListener)
         if (isAutomaticReconnectEnabled) {
+            //接收到服务器通知我离线的监听
+            connection.addAsyncStanzaListener(offlineListener, PresenceTypeFilter.UNAVAILABLE)
+            //心跳包失败后再次启动
+            PingManager.getInstanceFor(connection).registerPingFailedListener(pingFailedListener)
             connection.addConnectionListener(connectionListener)
         }
     }
