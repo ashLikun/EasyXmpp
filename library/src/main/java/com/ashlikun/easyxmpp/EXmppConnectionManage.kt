@@ -4,10 +4,8 @@ import com.ashlikun.easyxmpp.data.User
 import com.ashlikun.easyxmpp.listener.ConnectionCallback
 import com.ashlikun.easyxmpp.listener.ExConnectionListener
 import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
-import java.util.concurrent.TimeUnit
 
 /**
  * 作者　　: 李坤
@@ -20,15 +18,8 @@ import java.util.concurrent.TimeUnit
  */
 class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnection) {
 
-    companion object {
-        const val TAG = "EXmppConnectionManage"
-    }
 
     private var callbackListener = ExConnectionListener()
-    /**
-     * 失败累计计数
-     */
-    private var count = 1
     /**
      * 用户信息
      */
@@ -38,10 +29,8 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
 
     init {
         connection.addConnectionListener(callbackListener)
+
     }
-
-
-    private fun getTime(): Long = EXmppManage.get().config.reconnectionTime * count
 
     /**
      * 是否登录
@@ -64,17 +53,6 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
 
     /**
      * 连接服务器
-     * 未处理异常
-     */
-    @Throws(Exception::class)
-    internal fun connectSub() {
-        if (!EXmppManage.isConnected()) {
-            connection.connect()
-        }
-    }
-
-    /**
-     * 连接服务器
      * 处理异常
      */
     fun connect() {
@@ -85,29 +63,24 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
                     }
                 }, {
                     it.printStackTrace()
-                    reconnection()
+                    XmppManage.getRM().reconnect()
                 })
     }
 
-    private fun reconnection() {
-        if (!EXmppManage.get().config.isReconnection) {
-            return
-        }
-        count = 1
-        start()
-    }
-
-    private fun start() {
-        Observable.timer(getTime(), TimeUnit.MILLISECONDS)
-                .subscribeOn(Schedulers.newThread())
+    /**
+     * 断开连接
+     * 处理异常
+     */
+    fun disconnect() {
+        Observable.just(1).observeOn(Schedulers.newThread())
                 .subscribe({
-                    if (!EXmppManage.isConnected()) {
-                        connectSub()
+                    //取消重连任务
+                    XmppManage.getRM().cancel()
+                    if (connection.isConnected) {
+                        connection.disconnect()
                     }
                 }, {
-                    //异常了继续重新连接
-                    count++
-                    start()
+                    it.printStackTrace()
                 })
     }
 
@@ -115,9 +88,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      * 登录
      */
     fun login(callback: LoginCallback?) {
-        userData.run {
-            login(userName, password, callback)
-        }
+        userData.login(callback)
     }
 
     /**
@@ -125,23 +96,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      */
     fun login(userName: String, password: String, callback: LoginCallback?) {
         userData = User(userName, password)
-        Observable.just(1)
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .map {
-                    connection.login(userName, password)
-                    connection.isAuthenticated
-                }
-                .subscribe({
-                    if (it) {
-                        callback?.loginSuccess(userName, password)
-                    } else {
-                        callback?.loginError(userName, password, Exception("isAuthenticated == false"))
-                    }
-                }, { throwable ->
-                    //登录失败，回调
-                    callback?.loginError(userName, password, throwable)
-                })
+        userData.login(callback)
     }
 
     /**

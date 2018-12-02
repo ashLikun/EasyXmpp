@@ -1,14 +1,17 @@
 package com.ashlikun.easyxmpp.listener
 
-import com.ashlikun.easyxmpp.EXmppChatManage
-import com.ashlikun.easyxmpp.EXmppUtils
+import android.util.Log
+import com.ashlikun.easyxmpp.XmppManage
+import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.data.ChatMessage
 import com.ashlikun.easyxmpp.status.MessageStatus
 import io.reactivex.functions.Consumer
 import org.jivesoftware.smack.chat2.Chat
+import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener
 import org.jivesoftware.smack.chat2.OutgoingChatMessageListener
 import org.jivesoftware.smack.packet.Message
+import org.jivesoftware.smackx.delay.DelayInformationManager
 import org.jxmpp.jid.EntityBareJid
 import java.util.concurrent.CopyOnWriteArraySet
 
@@ -19,12 +22,17 @@ import java.util.concurrent.CopyOnWriteArraySet
  *
  * 功能介绍：发送与接受消息的监听
  */
-class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListener {
+class ExMessageListener constructor(var chatManage: ChatManager) : IncomingChatMessageListener, OutgoingChatMessageListener {
     /**
      * 这2个是切换主线程的回调
      */
-    private val incomingListeners = CopyOnWriteArraySet<IncomingChatMessageListener>()
-    private val outgoingListeners = CopyOnWriteArraySet<OutgoingChatMessageListener>()
+    private val receiveListeners = CopyOnWriteArraySet<ReceiveMessageListener>()
+    private val sendListeners = CopyOnWriteArraySet<SendMessageListener>()
+
+    /**
+     * 是否删除过这个用户的离线消息
+     */
+    private val isOfflineDeleteMessage = HashMap<String, Boolean>()
 
     init {
         addIncomingListenerSubThread(this)
@@ -38,12 +46,12 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
      * @param listener
      */
     fun addIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        EXmppChatManage.getChatM().removeIncomingListener(listener)
-        EXmppChatManage.getChatM().addIncomingListener(listener)
+        chatManage.removeIncomingListener(listener)
+        chatManage.addIncomingListener(listener)
     }
 
     fun removeIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        EXmppChatManage.getChatM().removeIncomingListener(listener)
+        chatManage.removeIncomingListener(listener)
     }
 
     /**
@@ -53,12 +61,12 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
      * @param listener
      */
     fun addOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        EXmppChatManage.getChatM().removeOutgoingListener(listener)
-        EXmppChatManage.getChatM().addOutgoingListener(listener)
+        chatManage.removeOutgoingListener(listener)
+        chatManage.addOutgoingListener(listener)
     }
 
     fun removeOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        EXmppChatManage.getChatM().removeOutgoingListener(listener)
+        chatManage.removeOutgoingListener(listener)
     }
 
     /**
@@ -67,15 +75,15 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
      *
      * @param listener
      */
-    fun addIncomingListener(listener: IncomingChatMessageListener) {
-        if (!incomingListeners.contains(listener)) {
-            incomingListeners.add(listener)
+    fun addReceiveListener(listener: ReceiveMessageListener) {
+        if (!receiveListeners.contains(listener)) {
+            receiveListeners.add(listener)
         }
     }
 
-    fun removeIncomingListener(listener: IncomingChatMessageListener) {
-        if (incomingListeners.contains(listener)) {
-            incomingListeners.remove(listener)
+    fun removeReceiveListener(listener: ReceiveMessageListener) {
+        if (receiveListeners.contains(listener)) {
+            receiveListeners.remove(listener)
         }
     }
 
@@ -85,15 +93,15 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
      *
      * @param listener
      */
-    fun addOutgoingListener(listener: OutgoingChatMessageListener) {
-        if (!outgoingListeners.contains(listener)) {
-            outgoingListeners.add(listener)
+    fun addSendListener(listener: SendMessageListener) {
+        if (!sendListeners.contains(listener)) {
+            sendListeners.add(listener)
         }
     }
 
-    fun removeOutgoingListener(listener: OutgoingChatMessageListener) {
-        if (outgoingListeners.contains(listener)) {
-            outgoingListeners.remove(listener)
+    fun removeSendListener(listener: SendMessageListener) {
+        if (sendListeners.contains(listener)) {
+            sendListeners.remove(listener)
         }
     }
 
@@ -104,10 +112,22 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
     override fun newIncomingMessage(from: EntityBareJid, message: Message, chat: Chat) {
         //保存消息到本地
         ChatMessage.getMyAcceptMessage(message).save()
+        var chatMessage = ChatMessage.findMessageId(message.stanzaId)
+        if (isOfflineDeleteMessage[XmppManage.getCM().userData.userName] != true && DelayInformationManager.isDelayedStanza(message)) {
+            //通知服务器删除离线消息
+            try {
+                XmppManage.getOM().deleteMessages()
+                isOfflineDeleteMessage[XmppManage.getCM().userData.userName] = true
+            } catch (e: Exception) {
+                if (XmppManage.get().config.isDebug) {
+                    XmppUtils.loge("删除失败$e")
+                }
+            }
+        }
         //回调主线程
-        EXmppUtils.runMain(Consumer {
-            for (listener in incomingListeners) {
-                listener.newIncomingMessage(from, message, chat)
+        XmppUtils.runMain(Consumer {
+            for (listener in receiveListeners) {
+                listener.onReceiveMessage(from, message, chatMessage, chat)
             }
         })
     }
@@ -118,10 +138,11 @@ class ExMessageListener : IncomingChatMessageListener, OutgoingChatMessageListen
     override fun newOutgoingMessage(to: EntityBareJid, message: Message, chat: Chat) {
         //改变数据库消息状态
         ChatMessage.changMessageStatus(message, MessageStatus.SUCCESS)
+        var chatMessage = ChatMessage.findMessageId(message.stanzaId)
         //回调主线程
-        EXmppUtils.runMain(Consumer {
-            for (listener in outgoingListeners) {
-                listener.newOutgoingMessage(to, message, chat)
+        XmppUtils.runMain(Consumer {
+            for (listener in sendListeners) {
+                listener.onSendMessage(to, message, chatMessage, chat)
             }
         })
     }

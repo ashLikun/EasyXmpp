@@ -1,8 +1,6 @@
 package com.ashlikun.easyxmpp.listener
 
-import android.util.Log
-import com.ashlikun.easyxmpp.EXmppConnectionManage
-import com.ashlikun.easyxmpp.EXmppManage
+import com.ashlikun.easyxmpp.XmppUtils
 import org.jivesoftware.smack.AbstractConnectionListener
 import org.jivesoftware.smack.XMPPConnection
 import java.util.*
@@ -35,9 +33,7 @@ class ExConnectionListener : AbstractConnectionListener() {
 
     override fun connected(connection: XMPPConnection) {
         super.connected(connection)
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(EXmppConnectionManage.TAG, "连接成功")
-        }
+        XmppUtils.loge("连接成功")
         for (callback in callbackList) {
             callback.connected(connection)
         }
@@ -51,9 +47,7 @@ class ExConnectionListener : AbstractConnectionListener() {
      */
     override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
         super.authenticated(connection, resumed)
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(EXmppConnectionManage.TAG, "authenticated$resumed")
-        }
+        XmppUtils.loge("authenticated$resumed")
     }
 
     /**
@@ -61,9 +55,7 @@ class ExConnectionListener : AbstractConnectionListener() {
      */
     override fun connectionClosed() {
         super.connectionClosed()
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(EXmppConnectionManage.TAG, "connectionClosed")
-        }
+        XmppUtils.loge("connectionClosed")
         for (callback in callbackList) {
             callback.connectionError(Exception("connection is closed"))
         }
@@ -76,9 +68,7 @@ class ExConnectionListener : AbstractConnectionListener() {
      */
     override fun connectionClosedOnError(e: Exception) {
         super.connectionClosedOnError(e)
-        if (EXmppManage.get().config.isDebug) {
-            Log.e(EXmppConnectionManage.TAG, "connectionClosedOnError" + e.toString())
-        }
+        XmppUtils.loge("connectionClosedOnError" + e.toString())
         for (callback in callbackList) {
             callback.connectionError(e)
         }

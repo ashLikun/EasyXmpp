@@ -1,9 +1,9 @@
 package com.ashlikun.easyxmpp
 
-import org.jivesoftware.smack.ReconnectionManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jivesoftware.smackx.offline.OfflineMessageManager
+import org.jivesoftware.smackx.receipts.DeliveryReceiptManager
 
 /**
  * @author　　: 李坤
@@ -12,12 +12,15 @@ import org.jivesoftware.smackx.offline.OfflineMessageManager
  *
  *
  * 功能介绍：
+ *
+ *
+ * 1:ChatStateManager: 聊天状态active（参加会话）, composing（正在输入）, gone（离开）, inactive（没有参加会话）, paused（暂停输入）。
  */
 
-class EXmppManage private constructor() {
+class XmppManage private constructor() {
     companion object {
-        private val instance by lazy { EXmppManage() }
-        fun get(): EXmppManage = instance
+        private val instance by lazy { XmppManage() }
+        fun get(): XmppManage = instance
         /**
          * 离线管理器
          */
@@ -26,12 +29,12 @@ class EXmppManage private constructor() {
         /**
          * 重新连接管理器
          */
-        fun getRM(): ReconnectionManager = get().reconnectionManager
+        fun getRM(): EasyReconnectionManager = EasyReconnectionManager.getInstanceFor(getCM().connection)
 
         /**
          * 自己封装的聊天管理器
          */
-        fun getChatM(): EXmppChatManage = EXmppChatManage.get()
+        fun getChatM(): EXmppChatManage = get().chatManage
 
         /**
          * 获取内部的连接管理器
@@ -55,11 +58,6 @@ class EXmppManage private constructor() {
 
 
     /**
-     * 重新连接管理器
-     */
-    lateinit var reconnectionManager: ReconnectionManager
-        internal set
-    /**
      * 离线消息管理器
      */
     lateinit var offlineMessageManager: OfflineMessageManager
@@ -67,26 +65,36 @@ class EXmppManage private constructor() {
     /**
      * 配置对象
      */
-    lateinit var config: EasyXmppConfig
+    lateinit var config: XmppConfig
         internal set
     /**
-     * 获取内部的连接管理器
+     * 内部的连接管理器
      */
     lateinit var connectionManage: EXmppConnectionManage
+        internal set
+    /**
+     * 自己封装的聊天管理器
+     */
+    lateinit var chatManage: EXmppChatManage
         internal set
 
     fun getDomain(): String = connectionManage.domain
 
 
-    internal fun init(configuration: XMPPTCPConnectionConfiguration, config: EasyXmppConfig) {
+    internal fun init(configuration: XMPPTCPConnectionConfiguration, config: XmppConfig) {
         this.config = config
         val connection = XMPPTCPConnection(configuration)
         //设置答复超时
         connection.replyTimeout = config.replyTimeout.toLong()
+
+        //几个管理器封装
         connectionManage = EXmppConnectionManage(connection)
-        reconnectionManager = ReconnectionManager.getInstanceFor(connection)
         offlineMessageManager = OfflineMessageManager(connection)
-        EXmppChatManage.get()
+        chatManage = EXmppChatManage(connection)
+        //自动重连
+        EasyReconnectionManager.getInstanceFor(connection)
+        //自动回执消息
+        DeliveryReceiptManager.getInstanceFor(connection).autoAddDeliveryReceiptRequests()
         connectionManage.connect()
     }
 }

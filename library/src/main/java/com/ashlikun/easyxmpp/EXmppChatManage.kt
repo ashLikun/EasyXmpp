@@ -2,15 +2,15 @@ package com.ashlikun.easyxmpp
 
 import com.ashlikun.easyxmpp.data.ChatMessage
 import com.ashlikun.easyxmpp.listener.ExMessageListener
-import com.ashlikun.easyxmpp.status.MessageStatus
+import com.ashlikun.easyxmpp.listener.ReceiveMessageListener
+import com.ashlikun.easyxmpp.listener.SendMessageListener
 import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.assit.QueryBuilder
-import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener
 import org.jivesoftware.smack.chat2.OutgoingChatMessageListener
-import org.jivesoftware.smack.packet.Message
+import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.stringprep.XmppStringprepException
 
@@ -23,26 +23,26 @@ import org.jxmpp.stringprep.XmppStringprepException
  * 功能介绍：聊天管理器
  * 对应消息的操作都在这
  */
-class EXmppChatManage private constructor() {
-    companion object {
-        private val instance by lazy { EXmppChatManage() }
-        /**
-         * 聊天管理器
-         */
-        private val chatManager by lazy { ChatManager.getInstanceFor(EXmppManage.getCM().connection) }
+class EXmppChatManage internal constructor(var connection: XMPPTCPConnection) {
+    /**
+     * 聊天管理器
+     */
+    val chatManager: ChatManager
 
-        fun get(): EXmppChatManage = instance
-        fun getChatM(): ChatManager = chatManager
+    private var messageListener: ExMessageListener
+
+    init {
+        chatManager = ChatManager.getInstanceFor(connection)
+        messageListener = ExMessageListener(chatManager)
     }
 
-    private var messageListener = ExMessageListener()
-
+    fun getChatM(): ChatManager = chatManager
     /**
      * 获取一个Chat
      */
     fun getChat(name: String): Chat? {
         try {
-            return chatManager.chatWith(JidCreate.entityBareFrom(EXmppUtils.getJidName(name)))
+            return chatManager.chatWith(JidCreate.entityBareFrom(XmppUtils.getJidName(name)))
         } catch (e: XmppStringprepException) {
             e.printStackTrace()
         }
@@ -50,49 +50,12 @@ class EXmppChatManage private constructor() {
     }
 
     /**
-     * 发送一条消息给Chat
-     */
-    fun sendMessage(name: String, content: String): Boolean {
-        val stanza = Message()
-        stanza.body = content
-        stanza.type = Message.Type.chat
-        return sendMessage(name, stanza)
-    }
-
-    /**
-     * 发送一条消息给Chat
-     */
-    fun sendMessage(name: String, content: Message): Boolean {
-        return if (!EXmppManage.isConnected()) false else
-            try {
-                val chat = getChat(name) ?: return false
-                if (content.to == null) {
-                    content.to = chat.xmppAddressOfChatPartner
-                }
-                //先保存数据库,在发送回调的时候再改变状态
-                var chatMessage = ChatMessage.getMySendMessage(content);
-                if (chatMessage.save()) {
-                    chat.send(content)
-                }
-                true
-            } catch (e: SmackException.NotConnectedException) {
-                e.printStackTrace()
-                ChatMessage.changMessageStatus(content, MessageStatus.ERROR)
-                false
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-                ChatMessage.changMessageStatus(content, MessageStatus.ERROR)
-                false
-            }
-    }
-
-    /**
      * 查询当前用户对应的所有消息
      */
     fun findMessage(): List<ChatMessage>? {
-        return if (!EXmppManage.isAuthenticated()) null else try {
+        return if (!XmppManage.isAuthenticated()) null else try {
             LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                    .where("meUsername = ?", EXmppManage.getCM().userData.getUser())
+                    .where("meUsername = ?", XmppManage.getCM().userData.getUser())
                     .orderBy("dataTime"))
         } catch (e: Exception) {
             null
@@ -104,9 +67,9 @@ class EXmppChatManage private constructor() {
      * @param friendUsername 对方名字
      */
     fun findMessage(friendUsername: String): List<ChatMessage>? {
-        return if (!EXmppManage.isAuthenticated()) null else try {
+        return if (!XmppManage.isAuthenticated()) null else try {
             LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                    .where("meUsername = ?", EXmppManage.getCM().userData.getUser())
+                    .where("meUsername = ?", XmppManage.getCM().userData.getUser())
                     .where("friendUsername = ?", friendUsername)
                     .orderBy("dataTime"))
         } catch (e: Exception) {
@@ -129,20 +92,6 @@ class EXmppChatManage private constructor() {
     }
 
     /**
-     * 添加接受消息监听
-     * 回调在主线程
-     *
-     * @param listener
-     */
-    fun addIncomingListener(listener: IncomingChatMessageListener) {
-        messageListener.addIncomingListener(listener)
-    }
-
-    fun removeIncomingListener(listener: IncomingChatMessageListener) {
-        messageListener.removeIncomingListener(listener)
-    }
-
-    /**
      * 添加发出消息监听
      * 回调在子线程，XMPP默认的
      *
@@ -157,17 +106,31 @@ class EXmppChatManage private constructor() {
     }
 
     /**
+     * 添加接受消息监听
+     * 回调在主线程
+     *
+     * @param listener
+     */
+    fun addReceiveListener(listener: ReceiveMessageListener) {
+        messageListener.addReceiveListener(listener)
+    }
+
+    fun removeReceiveListener(listener: ReceiveMessageListener) {
+        messageListener.removeReceiveListener(listener)
+    }
+
+    /**
      * 添加发出消息监听
      * 回调在主线程
      *
      * @param listener
      */
-    fun addOutgoingListener(listener: OutgoingChatMessageListener) {
-        messageListener.addOutgoingListener(listener)
+    fun addSendListener(listener: SendMessageListener) {
+        messageListener.addSendListener(listener)
     }
 
-    fun removeOutgoingListener(listener: OutgoingChatMessageListener) {
-        messageListener.removeOutgoingListener(listener)
+    fun removeSendListener(listener: SendMessageListener) {
+        messageListener.removeSendListener(listener)
     }
 
 }

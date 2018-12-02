@@ -2,11 +2,11 @@ package com.ashlikun.easyxmpp
 
 import android.app.Application
 import android.text.TextUtils
-
 import org.jivesoftware.smack.ConnectionConfiguration
-import org.jivesoftware.smack.ReconnectionManager
 import org.jivesoftware.smack.roster.Roster
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
+import org.jivesoftware.smackx.ping.PingManager
+import org.jivesoftware.smackx.receipts.DeliveryReceiptManager
 import org.jxmpp.stringprep.XmppStringprepException
 
 /**
@@ -17,7 +17,7 @@ import org.jxmpp.stringprep.XmppStringprepException
  *
  * 功能介绍：对xmpp的初始化配置
  */
-class EasyXmppConfig {
+class XmppConfig {
 
     lateinit var application: Application
         internal set
@@ -81,7 +81,12 @@ class EasyXmppConfig {
     /**
      * 重新连接时间间隔
      */
-    var reconnectionTime: Long = 5000
+    var reconnectionTime = 5000
+        internal set
+    /**
+     * 心跳ping间隔
+     */
+    var pingInterval = 60000
         internal set
     /**
      * 是否重新连接
@@ -92,10 +97,10 @@ class EasyXmppConfig {
         internal set
 
     class Builder private constructor(application: Application) {
-        internal var config: EasyXmppConfig
+        internal var config: XmppConfig
 
         init {
-            config = EasyXmppConfig()
+            config = XmppConfig()
             config.application = application
         }
 
@@ -198,7 +203,12 @@ class EasyXmppConfig {
          * 如果关闭重新连接这里设置0
          */
         fun reconnectionTime(reconnectionTime: Int): Builder {
-            config.reconnectionTime = reconnectionTime.toLong()
+            config.reconnectionTime = reconnectionTime
+            return this
+        }
+
+        fun pingInterval(pingInterval: Int): Builder {
+            config.pingInterval = pingInterval
             return this
         }
 
@@ -236,11 +246,14 @@ class EasyXmppConfig {
                 //需要经过同意才可以添加好友 manual 添加直接通过accept_all
                 Roster.setDefaultSubscriptionMode(config.subscriptionMode)
                 //重新连接机制
-                ReconnectionManager.setEnabledPerDefault(config.isReconnection)
-                ReconnectionManager.setDefaultFixedDelay((config.reconnectionTime / 1000).toInt())
-                ReconnectionManager.setDefaultReconnectionPolicy(ReconnectionManager.ReconnectionPolicy.FIXED_DELAY)
-
-                EXmppManage.get().init(builder.build(), config)
+                EasyReconnectionManager.setDefaultReconnectionEnable(config.isReconnection)
+                EasyReconnectionManager.setDefaultFixedDelay(config.reconnectionTime)
+                EasyReconnectionManager.setDefaultReconnectionPolicy(EasyReconnectionManager.ReconnectionPolicy.FIXED_DELAY)
+                //消息回执
+                DeliveryReceiptManager.setDefaultAutoReceiptMode(DeliveryReceiptManager.AutoReceiptMode.always)
+                //心跳包间隔
+                PingManager.setDefaultPingInterval(config.pingInterval / 1000)
+                XmppManage.get().init(builder.build(), config)
                 return true
             }
         }

@@ -2,8 +2,10 @@ package com.ashlikun.easyxmpp
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.util.Log
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import java.text.SimpleDateFormat
@@ -17,7 +19,7 @@ import java.util.*
  *
  * 功能介绍：
  */
-internal object EXmppUtils {
+object XmppUtils {
     private val datetimeFormat = SimpleDateFormat(
             "yyyy-MM-dd HH:mm:ss")
 
@@ -26,7 +28,7 @@ internal object EXmppUtils {
      */
     fun isNetworkConnected(): Boolean {
         var isConnected = false
-        val connMgr = EXmppManage.get().config.application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connMgr = XmppManage.get().config.application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         // 检测API是不是小于21，因为到了API21之后getNetworkInfo(int networkType)方法被弃用
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
 
@@ -58,12 +60,12 @@ internal object EXmppUtils {
                 .subscribe(next)
     }
 
-    fun runNew(next: Consumer<Int>) {
-        runNew(1, next)
+    fun runNew(next: Consumer<Int>): Disposable {
+        return runNew(1, next)
     }
 
-    fun runNew(id: Int, next: Consumer<Int>) {
-        Observable.just(id).observeOn(Schedulers.newThread())
+    fun runNew(id: Int, next: Consumer<Int>): Disposable {
+        return Observable.just(id).observeOn(Schedulers.newThread())
                 .subscribe(next)
     }
 
@@ -71,7 +73,7 @@ internal object EXmppUtils {
      * 获取一个人员在xmpp的名字
      */
     fun getJidName(name: String): String {
-        return "$name@${EXmppManage.get().getDomain()}"
+        return "$name@${XmppManage.get().getDomain()}"
     }
 
     /**
@@ -80,5 +82,11 @@ internal object EXmppUtils {
      */
     fun formatDatetime(date: Date): String {
         return datetimeFormat.format(date)
+    }
+
+    fun loge(msg: String) {
+        if (XmppManage.get().config.isDebug) {
+            Log.e("EasyXmpp", msg)
+        }
     }
 }

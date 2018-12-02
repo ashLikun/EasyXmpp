@@ -1,7 +1,16 @@
 package com.ashlikun.easyxmpp.data
 
-import com.ashlikun.easyxmpp.EXmppManage
+import com.ashlikun.easyxmpp.LoginCallback
+import com.ashlikun.easyxmpp.XmppManage
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import org.jivesoftware.smack.SmackException
+import org.jivesoftware.smack.XMPPException
+import org.jivesoftware.smack.packet.Presence
 import org.jxmpp.jid.EntityFullJid
+import java.io.IOException
+
 
 /**
  * 作者　　: 李坤
@@ -19,7 +28,7 @@ data class User(
      * 获取xmpp user对象
      */
     fun getUserJid(): EntityFullJid {
-        return EXmppManage.getCM().connection.user
+        return XmppManage.getCM().connection.user
     }
 
     /**
@@ -28,4 +37,62 @@ data class User(
     fun getUser(): String {
         return getUserJid().toString()
     }
+
+
+    /**
+     * 登录
+     */
+    fun login(callback: LoginCallback?) {
+        login(userName, password, callback)
+    }
+
+    /**
+     * 直接登录内部调用
+     */
+    @Throws(XMPPException::class, SmackException::class, IOException::class, InterruptedException::class)
+    internal fun neibuLogin() {
+        if (userName.isNotEmpty() && password.isNotEmpty()) {
+            XmppManage.getCM().connection.login(userName, password)
+        }
+    }
+
+    /**
+     * 登录,请在失败的时候自己处理
+     */
+    fun login(userName: String, password: String, callback: LoginCallback?) {
+        Observable.just(1)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map {
+                    XmppManage.getCM().connection.login(userName, password)
+                    XmppManage.getCM().connection.isAuthenticated
+                }.subscribe({
+                    if (it) {
+                        callback?.loginSuccess(userName, password)
+                    } else {
+                        callback?.loginError(userName, password, Exception("isAuthenticated == false"))
+                    }
+                }, { throwable ->
+                    //登录失败，回调
+                    callback?.loginError(userName, password, throwable)
+                })
+    }
+
+    /**
+     * 更新为上线
+     */
+    fun updateStateToAvailable() {
+        updateState(Presence.Type.available)
+    }
+
+    /**
+     * 更新用户状态
+     */
+    fun updateState(type: Presence.Type) {
+        if (XmppManage.isAuthenticated()) {
+            val presence = Presence(type)
+            XmppManage.getCM().connection.sendStanza(presence)
+        }
+    }
+
 }

@@ -1,8 +1,7 @@
 package com.ashlikun.easyxmpp.data
 
-import android.util.Log
-import com.ashlikun.easyxmpp.EXmppManage
-import com.ashlikun.easyxmpp.EXmppUtils
+import com.ashlikun.easyxmpp.XmppManage
+import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.status.MessageStatus
 import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.annotation.PrimaryKey
@@ -13,8 +12,6 @@ import com.ashlikun.orm.db.model.ColumnsValue
 import com.ashlikun.orm.db.model.ConflictAlgorithm
 import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smackx.delay.DelayInformationManager
-import org.json.JSONObject
-import org.jxmpp.util.XmppDateTime
 import java.util.*
 
 /**
@@ -61,14 +58,6 @@ data class ChatMessage(
          */
         var isMeSend: Boolean
 ) {
-    fun getContentData(): MessageData? {
-        return if (content == null) null else try {
-            var json = JSONObject(content)
-            MessageData(json.getString("type"), json.getString("content"))
-        } catch (e: Exception) {
-            null
-        }
-    }
 
     fun save(): Boolean {
         return try {
@@ -87,8 +76,8 @@ data class ChatMessage(
                     MessageStatus.SENDING,
                     message.body,
                     message.to.localpartOrNull.toString(),
-                    EXmppManage.getCM().userData.getUser(),
-                    EXmppUtils.formatDatetime(Date()),
+                    XmppManage.getCM().userData.getUser(),
+                    XmppUtils.formatDatetime(Date()),
                     true
             )
         }
@@ -99,22 +88,12 @@ data class ChatMessage(
         fun getMyAcceptMessage(message: Message): ChatMessage {
             //如果date不为null就代表是离线消息，时间得用离线消息时间
             var date = DelayInformationManager.getDelayTimestamp(message)
-            if (date != null) {
-                //通知服务器删除这条离线消息
-                try {
-                    EXmppManage.getOM().deleteMessages(arrayListOf(XmppDateTime.formatXEP0082Date(date)))
-                } catch (e: Exception) {
-                    if (EXmppManage.get().config.isDebug) {
-                        Log.e("deleteMessages", "删除失败$e")
-                    }
-                }
-            }
             return ChatMessage(message.stanzaId,
                     MessageStatus.SUCCESS,
                     message.body,
                     message.from.localpartOrNull.toString(),
-                    EXmppManage.getCM().userData.getUser(),
-                    EXmppUtils.formatDatetime(date ?: Date()),
+                    XmppManage.getCM().userData.getUser(),
+                    XmppUtils.formatDatetime(date ?: Date()),
                     false
             )
         }
@@ -128,6 +107,17 @@ data class ChatMessage(
                         , ColumnsValue(arrayOf("messageStatus"), arrayOf(status)), ConflictAlgorithm.None) > 0
             } catch (e: Exception) {
                 false
+            }
+        }
+
+        /**
+         * 查找一个消息
+         */
+        fun findMessageId(messageId: String): ChatMessage? {
+            return try {
+                LiteOrmUtil.get().queryById(messageId, ChatMessage::class.java)
+            } catch (e: Exception) {
+                null
             }
         }
     }

@@ -10,14 +10,20 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import com.ashlikun.easyxmpp.EXmppChatManage
-import com.ashlikun.easyxmpp.EXmppManage
-import com.ashlikun.easyxmpp.EasyXmppConfig
 import com.ashlikun.easyxmpp.LoginCallback
+import com.ashlikun.easyxmpp.XmppConfig
+import com.ashlikun.easyxmpp.XmppManage
+import com.ashlikun.easyxmpp.XmppUtils
+import com.ashlikun.easyxmpp.data.ChatMessage
+import com.ashlikun.easyxmpp.data.EasyChat
 import com.ashlikun.easyxmpp.listener.ConnectionCallback
+import com.ashlikun.easyxmpp.listener.ReceiveMessageListener
+import com.ashlikun.easyxmpp.listener.SendMessageListener
 import org.jivesoftware.smack.XMPPConnection
-import org.jivesoftware.smack.chat2.IncomingChatMessageListener
-import org.jivesoftware.smack.chat2.OutgoingChatMessageListener
+import org.jivesoftware.smack.chat2.Chat
+import org.jivesoftware.smack.packet.Message
+import org.jivesoftware.smackx.receipts.DeliveryReceiptManager
+import org.jxmpp.jid.EntityBareJid
 
 /**
  * @author zhangshun
@@ -33,6 +39,7 @@ class MainActivity : Activity() {
 
     internal var count = 1
     internal var handler = Handler()
+    lateinit var easyChat: EasyChat
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +59,7 @@ class MainActivity : Activity() {
 
     private fun sendMessage() {
         handler.postDelayed(Runnable {
-            EXmppChatManage.get().sendMessage("zhaoyang", "我是李坤2,这是第几条$count")
+            easyChat.sendMessage("我是李坤,这是第几条$count")
             count++
             if (count >= 10000) {
                 return@Runnable
@@ -62,10 +69,10 @@ class MainActivity : Activity() {
     }
 
     private fun offlineMessage() {
-        var size = EXmppManage.getOM().messageCount
+        var size = XmppManage.getOM().messageCount
         Toast.makeText(this, "离线消息一共$size", Toast.LENGTH_LONG).show()
         if (size > 0) {
-            EXmppManage.getOM().messages.forEach {
+            XmppManage.getOM().messages.forEach {
                 textViewTopic.text = "发送者:" + it.from.localpartOrNull.toString()
                 messageSb.append("离线消息-->$it.body")
                 messageSb.append("\n")
@@ -79,22 +86,24 @@ class MainActivity : Activity() {
      * 构建对象
      */
     private fun buildEasyXmppService() {
-        EasyXmppConfig.Builder.create(application)
+        XmppConfig.Builder.create(application)
                 .host("xmpp.o6o6o.com")
                 .isDebug(true)
                 .apply()
-        EXmppManage.getCM().addCallback(object : ConnectionCallback {
+        XmppManage.getCM().addCallback(object : ConnectionCallback {
             override fun connected(connection: XMPPConnection) {
-                EXmppManage.getCM().login("likun", "likun", object : LoginCallback {
+                XmppManage.getCM().login("likun", "likun", object : LoginCallback {
                     override fun loginError(userName: String, password: String, throwable: Throwable) {
                         Log.e("loginError", "userName   $password")
                     }
 
                     override fun loginSuccess(userName: String, password: String) {
                         Log.e("loginSuccess", "userName   $password")
-                        EXmppManage.getChatM().findMessage()?.forEach {
-                            messageSb.append("数据库--> 用户：${it.friendUsername} -- 时间：${it.dataTime} -- 内容：${it.content}")
-                            messageSb.append("\n")
+                        XmppManage.getChatM().findMessage()?.forEach {
+                            it.run {
+                                messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
+                            }
+                            messageSb.append("\n\n")
                             textView.text = messageSb
                         }
                     }
@@ -104,14 +113,33 @@ class MainActivity : Activity() {
             override fun connectionError(connection: Exception) {
             }
         })
-        EXmppChatManage.get().addIncomingListener(IncomingChatMessageListener { from, message, chat ->
-            textViewTopic.text = "发送者:" + from.localpart.toString()
-            messageSb.append(message.body)
-            messageSb.append("\n")
-            textView.text = messageSb
-        })
-        EXmppChatManage.get().addOutgoingListener(OutgoingChatMessageListener { to, message, chat ->
-        })
+        easyChat = EasyChat("zhaoyang")
+        XmppManage.getChatM().addReceiveListener(object : ReceiveMessageListener {
+            override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage?, chat: Chat) {
+                dbMessage?.run {
+                    messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
+                }
+                messageSb.append("\n\n")
+                textView.text = messageSb
+            }
 
+        })
+        XmppManage.getChatM().addSendListener(object : SendMessageListener {
+            override fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage?, chat: Chat) {
+                dbMessage?.run {
+                    messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
+                }
+                messageSb.append("\n\n")
+                textView.text = messageSb
+            }
+        })
+        DeliveryReceiptManager.getInstanceFor(XmppManage.getChatM().connection).addReceiptReceivedListener { fromJid, toJid, receiptId, receipt ->
+            XmppUtils.loge("消息回执 fromJid : ${fromJid.localpartOrNull} ,toJid : ${toJid.localpartOrNull},receiptId : $receiptId,,receipt : $receipt")
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        XmppManage.getCM().disconnect()
     }
 }
