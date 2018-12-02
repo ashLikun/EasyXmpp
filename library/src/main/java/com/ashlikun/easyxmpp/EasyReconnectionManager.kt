@@ -56,6 +56,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private var delayTime = 0
 
+    /**
+     * 重连前是否有网
+     */
+    private var isNetwork = true
+
     var disposable: Disposable? = null
 
 
@@ -110,7 +115,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      *重新连接的回调
      */
     private val consumer = Consumer<Long> {
-        if (it <= delayTime) {
+        //到达指定时间，或者网络变化，那么久去连接
+        if (it <= delayTime || (!isNetwork && XmppUtils.isNetworkConnected())) {
             //时间没到    回调
             Log.e("aaaaa", "${delayTime - it}")
             if (!reconnectionListeners.isEmpty()) {
@@ -185,6 +191,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             if (disposable?.isDisposed == false) {
                 disposable?.dispose()
             }
+            isNetwork = XmppUtils.isNetworkConnected()
             disposable = Observable.interval(0, 1, TimeUnit.SECONDS)
                     .observeOn(Schedulers.newThread())
                     .subscribe(consumer, consumerError)
@@ -225,6 +232,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             attempts = 0
             //延时时间间隔秒
             delayTime = timeDelay()
+            isNetwork = XmppUtils.isNetworkConnected()
             //执行任务
             disposable = Observable.interval(0, 1, TimeUnit.SECONDS)
                     .observeOn(Schedulers.newThread())
