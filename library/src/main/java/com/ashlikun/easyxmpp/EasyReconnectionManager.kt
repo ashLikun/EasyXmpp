@@ -117,18 +117,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     private val consumer = Consumer<Long> {
         //到达指定时间，或者网络变化，那么久去连接
         var currentNetwork = XmppUtils.isNetworkConnected()
-        if (it <= delayTime || (!isNetwork && currentNetwork)) {
-            //时间没到    回调
-            Log.e("aaaaa", "${delayTime - it}")
-            if (!reconnectionListeners.isEmpty()) {
-                XmppUtils.runMain(Consumer {
-                    for (listener in reconnectionListeners) {
-                        listener.reconnectionTime(delayTime - it)
-                    }
-                })
-            }
-        } else {
-            //网络从无到有
+
+        if (it > delayTime || (!isNetwork && currentNetwork)) {
             if (!isNetwork && currentNetwork) {
                 isNetwork = currentNetwork
             }
@@ -140,6 +130,16 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             //如果有登录信息去登录
             XmppManage.getCM().userData?.neibuLogin()
             disposable?.dispose()
+        } else {
+            //时间没到    回调
+            Log.e("aaaaa", "${delayTime - it}")
+            if (!reconnectionListeners.isEmpty()) {
+                XmppUtils.runMain(Consumer {
+                    for (listener in reconnectionListeners) {
+                        listener.reconnectionTime(delayTime - it)
+                    }
+                })
+            }
         }
     }
     /**
