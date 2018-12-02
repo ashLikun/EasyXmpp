@@ -57,6 +57,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     private var delayTime = 0
 
     var disposable: Disposable? = null
+
+
     /**
      * 连接监听
      */
@@ -94,30 +96,14 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         reconnect()
     }
 
-    /**
-     * 重连监听
-     */
-    fun addReconnectionListener(listener: EasyReconnectionListener): Boolean {
-        return if (reconnectionListeners.contains(listener)) false else reconnectionListeners.add(listener)
-    }
-
-    fun removeReconnectionListener(listener: EasyReconnectionListener): Boolean {
-        return reconnectionListeners.remove(listener)
-    }
-
-    /**
-     * 设置时间间隔
-     */
-    fun setFixedDelay(fixedDelay: Int) {
-        this.fixedDelay = fixedDelay
-        setReconnectionPolicy(EasyReconnectionManager.ReconnectionPolicy.FIXED_DELAY)
-    }
-
-    /**
-     * 时间间隔是怎么实现的
-     */
-    fun setReconnectionPolicy(reconnectionPolicy: EasyReconnectionManager.ReconnectionPolicy) {
-        this.reconnectionPolicy = reconnectionPolicy
+    init {
+        //接收到服务器通知我离线的监听
+        connection.addAsyncStanzaListener(offlineListener, PresenceTypeFilter.UNAVAILABLE)
+        //心跳包失败后再次启动
+        PingManager.getInstanceFor(connection).registerPingFailedListener(pingFailedListener)
+        if (isAutomaticReconnectEnabled) {
+            connection.addConnectionListener(connectionListener)
+        }
     }
 
     /**
@@ -164,16 +150,32 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         }
     }
 
-
-    init {
-        //接收到服务器通知我离线的监听
-        connection.addAsyncStanzaListener(offlineListener, PresenceTypeFilter.UNAVAILABLE)
-        //心跳包失败后再次启动
-        PingManager.getInstanceFor(connection).registerPingFailedListener(pingFailedListener)
-        if (isAutomaticReconnectEnabled) {
-            connection.addConnectionListener(connectionListener)
-        }
+    /**
+     * 重连监听
+     */
+    fun addReconnectionListener(listener: EasyReconnectionListener): Boolean {
+        return if (reconnectionListeners.contains(listener)) false else reconnectionListeners.add(listener)
     }
+
+    fun removeReconnectionListener(listener: EasyReconnectionListener): Boolean {
+        return reconnectionListeners.remove(listener)
+    }
+
+    /**
+     * 设置时间间隔
+     */
+    fun setFixedDelay(fixedDelay: Int) {
+        this.fixedDelay = fixedDelay
+        setReconnectionPolicy(EasyReconnectionManager.ReconnectionPolicy.FIXED_DELAY)
+    }
+
+    /**
+     * 时间间隔是怎么实现的
+     */
+    fun setReconnectionPolicy(reconnectionPolicy: EasyReconnectionManager.ReconnectionPolicy) {
+        this.reconnectionPolicy = reconnectionPolicy
+    }
+
 
     private fun reStart() {
         //再次执行任务
