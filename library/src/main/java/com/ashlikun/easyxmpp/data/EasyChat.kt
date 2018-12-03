@@ -59,6 +59,9 @@ class EasyChat constructor(var friendUsername: String) {
                 if (chatMessage.save()) {
                     chat?.send(content)
                 }
+                //改变数据库消息状态
+                chatMessage.messageStatus = MessageStatus.SUCCESS
+                chatMessage.save()
                 true
             } catch (e: SmackException.NotConnectedException) {
                 e.printStackTrace()

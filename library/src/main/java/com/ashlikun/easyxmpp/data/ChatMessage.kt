@@ -125,5 +125,30 @@ data class ChatMessage(
             }
         }
 
+        /**
+         * 查找是否有这条消息
+         */
+        fun havaMessage(messageId: String): Boolean {
+            return try {
+                LiteOrmUtil.get().queryById(messageId, ChatMessage::class.java) != null
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        /**
+         * 查找是否有这条消息
+         */
+        fun havaMessage(message: ChatMessage): Boolean {
+            return havaMessage(message.messageId ?: "")
+        }
+
+        /**
+         * 查找是否有这条消息
+         */
+        fun havaMessage(message: Message): Boolean {
+            return havaMessage(message.stanzaId ?: "")
+        }
+
     }
 }

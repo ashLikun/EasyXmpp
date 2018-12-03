@@ -1,10 +1,8 @@
 package com.ashlikun.easyxmpp.listener
 
-import android.util.Log
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.data.ChatMessage
-import com.ashlikun.easyxmpp.status.MessageStatus
 import io.reactivex.functions.Consumer
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.chat2.ChatManager
@@ -107,37 +105,38 @@ class ExMessageListener constructor(var chatManage: ChatManager) : IncomingChatM
 
 
     /**
-     * 接收到消息
+     * 接收到消息,处理本地已经有的
      */
     override fun newIncomingMessage(from: EntityBareJid, message: Message, chat: Chat) {
-        //保存消息到本地
-        ChatMessage.getMyAcceptMessage(message).save()
-        var chatMessage = ChatMessage.findMessageId(message.stanzaId)
-        if (isOfflineDeleteMessage[XmppManage.getCM().userData.userName] != true && DelayInformationManager.isDelayedStanza(message)) {
-            //通知服务器删除离线消息
-            try {
-                XmppManage.getOM().deleteMessages()
-                isOfflineDeleteMessage[XmppManage.getCM().userData.userName] = true
-            } catch (e: Exception) {
-                if (XmppManage.get().config.isDebug) {
-                    XmppUtils.loge("删除失败$e")
+        //如果本地已经有了就过滤
+        if (!ChatMessage.havaMessage(message)) {
+            //保存消息到本地
+            ChatMessage.getMyAcceptMessage(message).save()
+            var chatMessage = ChatMessage.findMessageId(message.stanzaId)
+            if (isOfflineDeleteMessage[XmppManage.getCM().userData.userName] != true && DelayInformationManager.isDelayedStanza(message)) {
+                //通知服务器删除离线消息
+                try {
+                    XmppManage.getOM().deleteMessages()
+                    isOfflineDeleteMessage[XmppManage.getCM().userData.userName] = true
+                } catch (e: Exception) {
+                    if (XmppManage.get().config.isDebug) {
+                        XmppUtils.loge("删除失败$e")
+                    }
                 }
             }
+            //回调主线程
+            XmppUtils.runMain(Consumer {
+                for (listener in receiveListeners) {
+                    listener.onReceiveMessage(from, message, chatMessage, chat)
+                }
+            })
         }
-        //回调主线程
-        XmppUtils.runMain(Consumer {
-            for (listener in receiveListeners) {
-                listener.onReceiveMessage(from, message, chatMessage, chat)
-            }
-        })
     }
 
     /**
      * 自己发送的消息
      */
     override fun newOutgoingMessage(to: EntityBareJid, message: Message, chat: Chat) {
-        //改变数据库消息状态
-        ChatMessage.changMessageStatus(message, MessageStatus.SUCCESS)
         var chatMessage = ChatMessage.findMessageId(message.stanzaId)
         //回调主线程
         XmppUtils.runMain(Consumer {
