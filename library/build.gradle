@@ -43,6 +43,3 @@ dependencies {
     compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 apply from: '../maven.gradle'
-repositories {
-    mavenCentral()
-}
