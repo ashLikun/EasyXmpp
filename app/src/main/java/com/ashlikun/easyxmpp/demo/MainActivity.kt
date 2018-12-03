@@ -22,12 +22,16 @@ import com.ashlikun.easyxmpp.listener.SendMessageListener
 import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.packet.Message
-import org.jivesoftware.smackx.receipts.DeliveryReceiptManager
 import org.jxmpp.jid.EntityBareJid
 
 /**
- * @author zhangshun
+ * @author　　: 李坤
+ * 创建时间: 2018/12/3 14:20
+ * 邮箱　　：496546144@qq.com
+ *
+ * 功能介绍：
  */
+
 class MainActivity : Activity() {
     private val messageSb = StringBuilder()
     /**
@@ -91,6 +95,10 @@ class MainActivity : Activity() {
                 .isDebug(true)
                 .apply()
         XmppManage.getCM().addCallback(object : ConnectionCallback {
+            override fun connectionError(isClose: Boolean, connection: Exception) {
+
+            }
+
             override fun connected(connection: XMPPConnection) {
                 XmppManage.getCM().login("likun", "likun", object : LoginCallback {
                     override fun loginError(userName: String, password: String, throwable: Throwable) {
@@ -110,8 +118,7 @@ class MainActivity : Activity() {
                 })
             }
 
-            override fun connectionError(connection: Exception) {
-            }
+
         })
         easyChat = EasyChat("zhaoyang")
         XmppManage.getChatM().addReceiveListener(object : ReceiveMessageListener {
@@ -133,7 +140,7 @@ class MainActivity : Activity() {
                 textView.text = messageSb
             }
         })
-        DeliveryReceiptManager.getInstanceFor(XmppManage.getChatM().connection).addReceiptReceivedListener { fromJid, toJid, receiptId, receipt ->
+       XmppManage.getDRM().addReceiptReceivedListener { fromJid, toJid, receiptId, receipt ->
             XmppUtils.loge("消息回执 fromJid : ${fromJid.localpartOrNull} ,toJid : ${toJid.localpartOrNull},receiptId : $receiptId,,receipt : $receipt")
         }
     }

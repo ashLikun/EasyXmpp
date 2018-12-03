@@ -32,6 +32,11 @@ class XmppManage private constructor() {
         fun getRM(): EasyReconnectionManager = EasyReconnectionManager.getInstanceFor(getCM().connection)
 
         /**
+         * 消息回执管理器
+         */
+        fun getDRM(): DeliveryReceiptManager = DeliveryReceiptManager.getInstanceFor(getCM().connection)
+
+        /**
          * 自己封装的聊天管理器
          */
         fun getChatM(): EXmppChatManage = get().chatManage

@@ -60,7 +60,7 @@ class XmppConfig {
     /**
      * 设置登录状态,不想登录传false
      */
-    var sendPresence = true
+    var sendPresence = false
         internal set
     /**
      * 是否调试

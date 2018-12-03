@@ -1,8 +1,11 @@
 package com.ashlikun.easyxmpp.listener
 
+import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
+import io.reactivex.functions.Consumer
 import org.jivesoftware.smack.AbstractConnectionListener
 import org.jivesoftware.smack.XMPPConnection
+import org.jivesoftware.smack.packet.Presence
 import java.util.*
 
 /**
@@ -40,7 +43,7 @@ class ExConnectionListener : AbstractConnectionListener() {
     }
 
     /**
-     * 登录成功
+     * 登录成功,处理离线消息
      *
      * @param connection
      * @param resumed
@@ -48,6 +51,17 @@ class ExConnectionListener : AbstractConnectionListener() {
     override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
         super.authenticated(connection, resumed)
         XmppUtils.loge("authenticated$resumed")
+        //如果没有设置登录状态
+        if (!XmppManage.get().config.sendPresence && !resumed) {
+            XmppUtils.runNew(Consumer {
+                XmppManage.getRM().isReconnectUnavailable = false
+                //设置离线状态
+                XmppManage.getCM().userData?.updateState(Presence.Type.unavailable)
+
+                //设置状态在线
+                XmppManage.getCM().userData?.updateState(Presence.Type.available)
+            })
+        }
     }
 
     /**
@@ -57,7 +71,7 @@ class ExConnectionListener : AbstractConnectionListener() {
         super.connectionClosed()
         XmppUtils.loge("connectionClosed")
         for (callback in callbackList) {
-            callback.connectionError(Exception("connection is closed"))
+            callback.connectionError(true, Exception("connection is closed"))
         }
     }
 
@@ -70,7 +84,7 @@ class ExConnectionListener : AbstractConnectionListener() {
         super.connectionClosedOnError(e)
         XmppUtils.loge("connectionClosedOnError" + e.toString())
         for (callback in callbackList) {
-            callback.connectionError(e)
+            callback.connectionError(false, e)
         }
     }
 }

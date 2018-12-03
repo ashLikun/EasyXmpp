@@ -1,6 +1,5 @@
 package com.ashlikun.easyxmpp
 
-import android.util.Log
 import com.ashlikun.easyxmpp.listener.EasyReconnectionListener
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
@@ -14,7 +13,6 @@ import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 /**
  * @author　　: 李坤
@@ -47,8 +45,15 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         private set
         @Synchronized
         get
+    /**
+     * 离线重连是否关闭
+     * true:开启
+     * false:暂时关闭关闭，关闭的时候在回掉后会设置成开启，也就是一次机会
+     */
+    var isReconnectUnavailable = true
+        @Synchronized
+        get
 
-    internal var done = false
     private var attempts = 0
     /**
      * 延时时间间隔秒
@@ -68,15 +73,12 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private val connectionListener = object : AbstractConnectionListener() {
         override fun connectionClosed() {
-            done = true
         }
 
         override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
-            done = false
         }
 
         override fun connectionClosedOnError(e: Exception?) {
-            done = false
             if (!isAutomaticReconnectEnabled) {
                 return
             }
@@ -88,16 +90,24 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private val offlineListener = StanzaListener {
         //离线了,重新上线
-        XmppUtils.loge("当前用户离线了" + it.toString())
-        reconnect()
+        if (isReconnectUnavailable) {
+            XmppUtils.loge("当前用户离线了" + it.toString())
+            reconnect()
+        } else {
+            isReconnectUnavailable = true
+        }
     }
     /**
      * 心跳包失败后再次启动
      */
     private val pingFailedListener = PingFailedListener {
         //心跳包失败,重新上线
-        XmppUtils.loge("pingFailed当前用户离线了${XmppManage.getCM().userData}")
-        reconnect()
+        if (isReconnectUnavailable) {
+            XmppUtils.loge("pingFailed当前用户离线了${XmppManage.getCM().userData}")
+            reconnect()
+        } else {
+            isReconnectUnavailable = true
+        }
     }
 
     init {
@@ -131,7 +141,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             disposable?.dispose()
         } else {
             //时间没到    回调
-            Log.e("aaaaa", "${delayTime - it}")
+            XmppUtils.loge("重连倒计时 ${delayTime - it}")
             if (!reconnectionListeners.isEmpty()) {
                 XmppUtils.runMain(Consumer {
                     for (listener in reconnectionListeners) {
@@ -217,7 +227,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      * 是否可以重连
      */
     private fun isReconnectionPossible(): Boolean {
-        return (!done && isAutomaticReconnectEnabled)
+        return (isAutomaticReconnectEnabled)
     }
 
     /**
@@ -227,7 +237,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     fun reconnect() {
         val connection = this.weakRefConnection.get()
         if (connection == null) {
-            LOGGER.fine("Connection is null, will not reconnect")
+            XmppUtils.loge("Connection is null, will not reconnect")
             return
         }
         //是否正在运行重连  isDisposed = true 就是结束了
@@ -279,17 +289,13 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     }
 
     companion object {
-        private val LOGGER = Logger.getLogger(EasyReconnectionManager::class.java.name)
-
         private val INSTANCES = WeakHashMap<AbstractXMPPConnection, EasyReconnectionManager>()
 
         @Synchronized
         fun getInstanceFor(connection: AbstractXMPPConnection): EasyReconnectionManager {
-            var reconnectionManager: EasyReconnectionManager? = INSTANCES[connection]
-            if (reconnectionManager == null) {
-                reconnectionManager = EasyReconnectionManager(connection)
-                INSTANCES[connection] = reconnectionManager
-            }
+            var reconnectionManager: EasyReconnectionManager = INSTANCES[connection]
+                    ?: EasyReconnectionManager(connection)
+            INSTANCES[connection] = reconnectionManager
             return reconnectionManager
         }
 
@@ -300,7 +306,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                 }
             }
         }
-
 
         private var defaultFixedDelay = 15000
         private var defaultAutomaticReconnectEnabled = true

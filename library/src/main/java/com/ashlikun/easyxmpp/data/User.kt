@@ -35,7 +35,7 @@ data class User(
      * 获取xmpp user对象 String
      */
     fun getUser(): String {
-        return getUserJid().toString()
+        return getUserJid().localpart.toString()
     }
 
 
@@ -81,18 +81,22 @@ data class User(
     /**
      * 更新为上线
      */
-    fun updateStateToAvailable() {
-        updateState(Presence.Type.available)
+    fun updateStateToAvailable(): Boolean {
+        return updateState(Presence.Type.available)
     }
 
     /**
-     * 更新用户状态
+     * 更新用户状态,要在子线程执行
      */
-    fun updateState(type: Presence.Type) {
-        if (XmppManage.isAuthenticated()) {
-            val presence = Presence(type)
-            XmppManage.getCM().connection.sendStanza(presence)
-        }
+    fun updateState(type: Presence.Type): Boolean {
+        return if (XmppManage.isAuthenticated()) {
+            try {
+                XmppManage.getCM().connection.sendStanza(Presence(type))
+                true
+            } catch (e: Exception) {
+            }
+            false
+        } else false
     }
 
 }

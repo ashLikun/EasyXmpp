@@ -75,7 +75,7 @@ class EasyChat constructor(var friendUsername: String) {
      * 查询当前用户对应的所有消息
      */
     fun findMessage(): List<ChatMessage>? {
-        return if (!XmppManage.isAuthenticated()) null else try {
+        return if (user.userName.isEmpty()) null else try {
             LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
                     .where("meUsername = ?", user.getUser())
                     .where("friendUsername = ?", friendUsername)
@@ -86,7 +86,7 @@ class EasyChat constructor(var friendUsername: String) {
     }
 
     /**
-     * 设置当前状态
+     * 设置当前会话状态
      * active（参加会话）, composing（正在输入）, gone（离开）, inactive（没有参加会话）, paused（暂停输入）。
      */
     fun setCurrentState(newState: ChatState) {

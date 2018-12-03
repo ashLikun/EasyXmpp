@@ -61,7 +61,11 @@ data class ChatMessage(
 
     fun save(): Boolean {
         return try {
-            LiteOrmUtil.get().save(this) > 0
+            if (content == null || messageId == null) {
+                false
+            } else {
+                LiteOrmUtil.get().save(this) > 0
+            }
         } catch (e: Exception) {
             false
         }
@@ -120,5 +124,6 @@ data class ChatMessage(
                 null
             }
         }
+
     }
 }

@@ -20,9 +20,9 @@ interface ConnectionCallback {
 
     /**
      * 连接中断
-     *
+     *@param isClose 是否是关闭连接
      * @param connection
      */
-    fun connectionError(connection: Exception)
+    fun connectionError(isClose: Boolean, connection: Exception)
 
 }
