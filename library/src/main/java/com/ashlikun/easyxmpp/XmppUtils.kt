@@ -88,11 +88,4 @@ object XmppUtils {
             Log.e("EasyXmpp", msg)
         }
     }
-
-    /**
-     * 获取离线消息，会通过
-     */
-    fun getOfflineMessage() {
-
-    }
 }

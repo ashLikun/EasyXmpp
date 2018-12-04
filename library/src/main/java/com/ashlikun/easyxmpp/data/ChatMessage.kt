@@ -16,6 +16,7 @@ import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smackx.delay.DelayInformationManager
 import org.json.JSONObject
 import org.jxmpp.jid.impl.JidCreate
+import org.jxmpp.stringprep.XmppStringprepException
 import java.util.*
 
 /**
@@ -72,13 +73,20 @@ data class ChatMessage(
         var isMeSend: Boolean
 ) {
 
+    /**
+     * 获取xmpp的message对象
+     */
     fun getMessage(): Message {
         val message = Message()
         message.stanzaId = messageId
         message.body = content
         message.type = Message.Type.chat
         if (friendUsername != null) {
-            message.to = JidCreate.entityBareFrom(XmppUtils.getJidName(friendUsername!!))
+            try {
+                message.to = JidCreate.entityBareFrom(XmppUtils.getJidName(friendUsername!!))
+            } catch (e: XmppStringprepException) {
+                e.printStackTrace()
+            }
         }
         return message
     }
