@@ -3,12 +3,16 @@ package com.ashlikun.easyxmpp.listener
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.data.ChatMessage
+import com.ashlikun.easyxmpp.status.MessageStatus
+import org.jivesoftware.smack.StanzaListener
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener
-import org.jivesoftware.smack.chat2.OutgoingChatMessageListener
+import org.jivesoftware.smack.filter.*
 import org.jivesoftware.smack.packet.Message
+import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smackx.delay.DelayInformationManager
+import org.jivesoftware.smackx.xhtmlim.packet.XHTMLExtension
 import org.jxmpp.jid.EntityBareJid
 import java.util.concurrent.CopyOnWriteArraySet
 
@@ -19,51 +23,47 @@ import java.util.concurrent.CopyOnWriteArraySet
  *
  * 功能介绍：发送与接受消息的监听
  */
-class ExMessageListener constructor(var chatManage: ChatManager) : IncomingChatMessageListener, OutgoingChatMessageListener {
+class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManage: ChatManager) : IncomingChatMessageListener {
+    private val MESSAGE_FILTER = AndFilter(
+            MessageTypeFilter.NORMAL_OR_CHAT,
+            OrFilter(MessageWithBodiesFilter.INSTANCE, StanzaExtensionFilter(XHTMLExtension.ELEMENT, XHTMLExtension.NAMESPACE))
+    )
+    private val OUTGOING_MESSAGE_FILTER = AndFilter(
+            MESSAGE_FILTER,
+            ToTypeFilter.ENTITY_FULL_OR_BARE_JID
+    )
     /**
      * 这2个是切换主线程的回调
      */
     private val receiveListeners = CopyOnWriteArraySet<ReceiveMessageListener>()
     private val sendListeners = CopyOnWriteArraySet<SendMessageListener>()
-
+    /**
+     * 自己发送的消息
+     * 监听发出的消息，这里是真的成功发出
+     * 这里是子线程
+     */
+    private val messagSendListener = StanzaListener {
+        val message = it as Message
+        ChatMessage.changMessageStatus(message, MessageStatus.SUCCESS)
+        var chatMessage = ChatMessage.findMessageId(message.stanzaId)
+        XmppUtils.runMain {
+            val to = message.to.asEntityBareJidOrThrow()
+            val chat = chatManage.chatWith(to)
+            for (listener in sendListeners) {
+                listener.onSendMessage(to, message, chatMessage, chat)
+            }
+        }
+    }
     /**
      * 是否删除过这个用户的离线消息
      */
     private val isOfflineDeleteMessage = HashMap<String, Boolean>()
 
     init {
-        addIncomingListenerSubThread(this)
-        addOutgoingListenerSubThread(this)
-    }
-
-    /**
-     * 添加接受消息监听
-     * 回调在子线程，XMPP默认的
-     *
-     * @param listener
-     */
-    fun addIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        chatManage.removeIncomingListener(listener)
-        chatManage.addIncomingListener(listener)
-    }
-
-    fun removeIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        chatManage.removeIncomingListener(listener)
-    }
-
-    /**
-     * 添加发出消息监听
-     * 回调在子线程，XMPP默认的
-     *
-     * @param listener
-     */
-    fun addOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        chatManage.removeOutgoingListener(listener)
-        chatManage.addOutgoingListener(listener)
-    }
-
-    fun removeOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        chatManage.removeOutgoingListener(listener)
+        chatManage.removeIncomingListener(this)
+        chatManage.addIncomingListener(this)
+        //监听发送的消息，这里是xnpp真的发送成功了
+        connection.addStanzaSendingListener(messagSendListener, OUTGOING_MESSAGE_FILTER)
     }
 
     /**
@@ -132,16 +132,4 @@ class ExMessageListener constructor(var chatManage: ChatManager) : IncomingChatM
         }
     }
 
-    /**
-     * 自己发送的消息
-     */
-    override fun newOutgoingMessage(to: EntityBareJid, message: Message, chat: Chat) {
-        var chatMessage = ChatMessage.findMessageId(message.stanzaId)
-        //回调主线程
-        XmppUtils.runMain {
-            for (listener in sendListeners) {
-                listener.onSendMessage(to, message, chatMessage, chat)
-            }
-        }
-    }
 }

@@ -8,8 +8,6 @@ import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.assit.QueryBuilder
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.chat2.ChatManager
-import org.jivesoftware.smack.chat2.IncomingChatMessageListener
-import org.jivesoftware.smack.chat2.OutgoingChatMessageListener
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.stringprep.XmppStringprepException
@@ -23,18 +21,15 @@ import org.jxmpp.stringprep.XmppStringprepException
  * 功能介绍：聊天管理器
  * 对应消息的操作都在这
  */
-class EXmppChatManage internal constructor(var connection: XMPPTCPConnection) {
+class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
+
     /**
      * 聊天管理器
      */
-    val chatManager: ChatManager
+    val chatManager: ChatManager = ChatManager.getInstanceFor(connection)
 
-    private var messageListener: ExMessageListener
+    private var messageListener = ExMessageListener(connection, chatManager)
 
-    init {
-        chatManager = ChatManager.getInstanceFor(connection)
-        messageListener = ExMessageListener(chatManager)
-    }
 
     fun getChatM(): ChatManager = chatManager
     /**
@@ -92,34 +87,6 @@ class EXmppChatManage internal constructor(var connection: XMPPTCPConnection) {
         } catch (e: Exception) {
             null
         }
-    }
-
-    /**
-     * 添加接受消息监听
-     * 回调在子线程，XMPP默认的
-     *
-     * @param listener
-     */
-    fun addIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        messageListener.addIncomingListenerSubThread(listener)
-    }
-
-    fun removeIncomingListenerSubThread(listener: IncomingChatMessageListener) {
-        messageListener.removeIncomingListenerSubThread(listener)
-    }
-
-    /**
-     * 添加发出消息监听
-     * 回调在子线程，XMPP默认的
-     *
-     * @param listener
-     */
-    fun addOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        messageListener.addOutgoingListenerSubThread(listener)
-    }
-
-    fun removeOutgoingListenerSubThread(listener: OutgoingChatMessageListener) {
-        messageListener.removeOutgoingListenerSubThread(listener)
     }
 
     /**

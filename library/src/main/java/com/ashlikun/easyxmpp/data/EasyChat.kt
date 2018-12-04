@@ -1,10 +1,8 @@
 package com.ashlikun.easyxmpp.data
 
 import com.ashlikun.easyxmpp.XmppManage
-import com.ashlikun.easyxmpp.status.MessageStatus
 import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.assit.QueryBuilder
-import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smackx.chatstates.ChatState
@@ -37,6 +35,7 @@ class EasyChat constructor(var friendUsername: String) {
 
     /**
      * 发送一条消息给Chat
+     * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
      */
     fun sendMessage(content: String): Boolean {
         val stanza = Message()
@@ -47,31 +46,32 @@ class EasyChat constructor(var friendUsername: String) {
 
     /**
      * 发送一条消息给Chat
+     * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
      */
     fun sendMessage(content: Message): Boolean {
-        return if (!XmppManage.isConnected() || chat == null) false else
-            try {
-                if (content.to == null) {
-                    content.to = chat?.xmppAddressOfChatPartner
-                }
-                //先保存数据库,在发送回调的时候再改变状态
-                var chatMessage = ChatMessage.getMySendMessage(content);
-                if (chatMessage.save()) {
-                    chat?.send(content)
-                }
-                //改变数据库消息状态
-                chatMessage.messageStatus = MessageStatus.SUCCESS
-                chatMessage.save()
-                true
-            } catch (e: SmackException.NotConnectedException) {
-                e.printStackTrace()
-                ChatMessage.changMessageStatus(content, MessageStatus.ERROR)
-                false
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-                ChatMessage.changMessageStatus(content, MessageStatus.ERROR)
-                false
-            }
+        //先保存数据库,在发送回调的时候再改变状态
+        var chatManage = ChatMessage.getMySendMessage(content)
+        return chatManage.send(chat)
+    }
+
+    /**
+     * 创建一个消息
+     */
+    fun createMessage(content: Message): ChatMessage {
+        if (content.to == null) {
+            content.to = chat?.xmppAddressOfChatPartner
+        }
+        return ChatMessage.getMySendMessage(content)
+    }
+
+    /**
+     * 创建一个消息
+     */
+    fun createMessage(content: String): ChatMessage {
+        val stanza = Message()
+        stanza.body = content
+        stanza.type = Message.Type.chat
+        return createMessage(stanza)
     }
 
     /**
