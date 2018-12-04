@@ -78,6 +78,23 @@ class EXmppChatManage internal constructor(var connection: XMPPTCPConnection) {
     }
 
     /**
+     * 查询当前用户对应的所有消息,加上分页
+     * @param friendUsername 对方名字
+     * @param start 开始的行数
+     * @param pageSize 查询多少条数据
+     */
+    fun findMessage(friendUsername: String, start: Int, pageSize: Int): List<ChatMessage>? {
+        return if (!XmppManage.isAuthenticated()) null else try {
+            LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                    .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                    .where("friendUsername = ?", friendUsername)
+                    .orderBy("dataTime").limit(start, pageSize))
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * 添加接受消息监听
      * 回调在子线程，XMPP默认的
      *
