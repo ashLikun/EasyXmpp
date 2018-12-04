@@ -58,9 +58,9 @@ class XmppConfig {
     var compressionEnabled = true
         internal set
     /**
-     * 设置登录状态,不想登录传false
+     * 设置登录状态,不想在线传false
      */
-    var sendPresence = false
+    var sendPresence = true
         internal set
     /**
      * 是否调试
