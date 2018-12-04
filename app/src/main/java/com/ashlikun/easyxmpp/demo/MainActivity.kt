@@ -62,6 +62,7 @@ class MainActivity : Activity() {
     }
 
     private fun sendMessage() {
+        easyChat.sendMessage("我是李坤,这是第几条$count")
         handler.postDelayed(Runnable {
             easyChat.sendMessage("我是李坤,这是第几条$count")
             count++
