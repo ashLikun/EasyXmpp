@@ -115,6 +115,7 @@ data class ChatMessage(
                     message.to = chat?.xmppAddressOfChatPartner
                 }
                 //先保存数据库,在发送回调的时候再改变状态
+                messageStatus = MessageStatus.SENDING
                 save()
                 chat?.send(content)
                 true
@@ -163,7 +164,6 @@ data class ChatMessage(
          * 构建一个我发出的消息
          */
         fun getMySendMessage(message: Message): ChatMessage {
-
             return ChatMessage(message.stanzaId,
                     MessageStatus.SENDING,
                     getMessageType(message.body),
