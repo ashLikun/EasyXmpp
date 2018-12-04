@@ -104,7 +104,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
     }
 
     /**
-     * 发送一个XML
+     * 发送一个数据
      *@param bolock 回调方法
      */
     fun sendStanza(stanza: Stanza, bolock: (iSsuccess: Boolean) -> Unit) {
@@ -112,8 +112,8 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
             try {
                 if (connection.isConnected) {
                     connection.sendStanza(stanza)
-                }
-                true
+                    true
+                } else false
             } catch (e: Exception) {
                 false
             }
@@ -123,7 +123,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
     }
 
     /**
-     * 添加接受消息监听
+     * 添加连接监听
      *
      * @param callback
      */

@@ -17,7 +17,7 @@ import java.util.*
 class ExConnectionListener : AbstractConnectionListener() {
     var callbackList: MutableList<ConnectionCallback> = ArrayList()
     /**
-     * 添加接受消息监听
+     * 添加连接监听
      *
      * @param callback
      */
