@@ -6,7 +6,6 @@ import android.util.Log
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
-import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import java.text.SimpleDateFormat
 import java.util.*
@@ -51,22 +50,22 @@ object XmppUtils {
         return isConnected
     }
 
-    fun runMain(next: Consumer<Int>) {
+    fun runMain(next: () -> Unit) {
         runMain(1, next)
     }
 
-    fun runMain(id: Int, next: Consumer<Int>) {
+    fun runMain(id: Int, next: () -> Unit) {
         Observable.just(id).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(next)
+                .subscribe { next() }
     }
 
-    fun runNew(next: Consumer<Int>): Disposable {
+    fun runNew(next: () -> Unit): Disposable {
         return runNew(1, next)
     }
 
-    fun runNew(id: Int, next: Consumer<Int>): Disposable {
+    fun runNew(id: Int, next: () -> Unit): Disposable {
         return Observable.just(id).observeOn(Schedulers.newThread())
-                .subscribe(next)
+                .subscribe { next() }
     }
 
     /**
@@ -93,7 +92,7 @@ object XmppUtils {
     /**
      * 获取离线消息，会通过
      */
-    fun getOfflineMessage(){
+    fun getOfflineMessage() {
 
     }
 }

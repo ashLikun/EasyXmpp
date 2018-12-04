@@ -3,7 +3,6 @@ package com.ashlikun.easyxmpp.listener
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.data.ChatMessage
-import io.reactivex.functions.Consumer
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener
@@ -125,11 +124,11 @@ class ExMessageListener constructor(var chatManage: ChatManager) : IncomingChatM
                 }
             }
             //回调主线程
-            XmppUtils.runMain(Consumer {
+            XmppUtils.runMain {
                 for (listener in receiveListeners) {
                     listener.onReceiveMessage(from, message, chatMessage, chat)
                 }
-            })
+            }
         }
     }
 
@@ -139,10 +138,10 @@ class ExMessageListener constructor(var chatManage: ChatManager) : IncomingChatM
     override fun newOutgoingMessage(to: EntityBareJid, message: Message, chat: Chat) {
         var chatMessage = ChatMessage.findMessageId(message.stanzaId)
         //回调主线程
-        XmppUtils.runMain(Consumer {
+        XmppUtils.runMain {
             for (listener in sendListeners) {
                 listener.onSendMessage(to, message, chatMessage, chat)
             }
-        })
+        }
     }
 }

@@ -1,6 +1,5 @@
 package com.ashlikun.easyxmpp.data
 
-import com.ashlikun.easyxmpp.LoginCallback
 import com.ashlikun.easyxmpp.XmppManage
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -40,13 +39,6 @@ data class User(
 
 
     /**
-     * 登录
-     */
-    fun login(callback: LoginCallback?) {
-        login(userName, password, callback)
-    }
-
-    /**
      * 直接登录内部调用
      */
     @Throws(XMPPException::class, SmackException::class, IOException::class, InterruptedException::class)
@@ -59,7 +51,7 @@ data class User(
     /**
      * 登录,请在失败的时候自己处理
      */
-    fun login(userName: String, password: String, callback: LoginCallback?) {
+    fun login(bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
         Observable.just(1)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -67,14 +59,15 @@ data class User(
                     XmppManage.getCM().connection.login(userName, password)
                     XmppManage.getCM().connection.isAuthenticated
                 }.subscribe({
+
                     if (it) {
-                        callback?.loginSuccess(userName, password)
+                        bolock(this, it, null)
                     } else {
-                        callback?.loginError(userName, password, Exception("isAuthenticated == false"))
+                        bolock(this, it, Exception("isAuthenticated == false"))
                     }
                 }, { throwable ->
                     //登录失败，回调
-                    callback?.loginError(userName, password, throwable)
+                    bolock(this, false, throwable)
                 })
     }
 

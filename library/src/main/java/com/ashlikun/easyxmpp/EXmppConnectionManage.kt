@@ -4,8 +4,12 @@ import com.ashlikun.easyxmpp.data.User
 import com.ashlikun.easyxmpp.listener.ConnectionCallback
 import com.ashlikun.easyxmpp.listener.ExConnectionListener
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
+import org.jivesoftware.smack.packet.Stanza
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
+
 
 /**
  * 作者　　: 李坤
@@ -87,16 +91,35 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
     /**
      * 登录
      */
-    fun login(callback: LoginCallback?) {
-        userData.login(callback)
+    fun login(bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
+        userData.login(bolock)
     }
 
     /**
      * 登录,请在失败的时候自己处理
      */
-    fun login(userName: String, password: String, callback: LoginCallback?) {
+    fun login(userName: String, password: String, bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
         userData = User(userName, password)
-        userData.login(callback)
+        userData.login(bolock)
+    }
+
+    /**
+     * 发送一个XML
+     *@param bolock 回调方法
+     */
+    fun sendStanza(stanza: Stanza, bolock: (iSsuccess: Boolean) -> Unit) {
+        Observable.create<Boolean> {
+            try {
+                if (connection.isConnected) {
+                    connection.sendStanza(stanza)
+                }
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(Consumer(bolock))
     }
 
     /**

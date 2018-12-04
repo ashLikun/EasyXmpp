@@ -10,12 +10,12 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import com.ashlikun.easyxmpp.LoginCallback
 import com.ashlikun.easyxmpp.XmppConfig
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.data.ChatMessage
 import com.ashlikun.easyxmpp.data.EasyChat
+import com.ashlikun.easyxmpp.data.User
 import com.ashlikun.easyxmpp.listener.ConnectionCallback
 import com.ashlikun.easyxmpp.listener.ReceiveMessageListener
 import com.ashlikun.easyxmpp.listener.SendMessageListener
@@ -44,7 +44,7 @@ class MainActivity : Activity() {
     internal var count = 1
     internal var handler = Handler()
     lateinit var easyChat: EasyChat
-
+    var user = User("likun", "likun")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -100,13 +100,9 @@ class MainActivity : Activity() {
             }
 
             override fun connected(connection: XMPPConnection) {
-                XmppManage.getCM().login("likun", "likun", object : LoginCallback {
-                    override fun loginError(userName: String, password: String, throwable: Throwable) {
-                        Log.e("loginError", "userName   $password")
-                    }
-
-                    override fun loginSuccess(userName: String, password: String) {
-                        Log.e("loginSuccess", "userName   $password")
+                user.login { user, isSuccess, throwable ->
+                    Log.e("loginIsSuccess$isSuccess", "userName   $user")
+                    if (isSuccess) {
                         XmppManage.getChatM().findMessage()?.forEach {
                             it.run {
                                 messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
@@ -115,10 +111,8 @@ class MainActivity : Activity() {
                             textView.text = messageSb
                         }
                     }
-                })
+                }
             }
-
-
         })
         easyChat = EasyChat("zhaoyang")
         XmppManage.getChatM().addReceiveListener(object : ReceiveMessageListener {
@@ -129,7 +123,6 @@ class MainActivity : Activity() {
                 messageSb.append("\n\n")
                 textView.text = messageSb
             }
-
         })
         XmppManage.getChatM().addSendListener(object : SendMessageListener {
             override fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage?, chat: Chat) {
@@ -140,7 +133,7 @@ class MainActivity : Activity() {
                 textView.text = messageSb
             }
         })
-       XmppManage.getDRM().addReceiptReceivedListener { fromJid, toJid, receiptId, receipt ->
+        XmppManage.getDRM().addReceiptReceivedListener { fromJid, toJid, receiptId, receipt ->
             XmppUtils.loge("消息回执 fromJid : ${fromJid.localpartOrNull} ,toJid : ${toJid.localpartOrNull},receiptId : $receiptId,,receipt : $receipt")
         }
     }

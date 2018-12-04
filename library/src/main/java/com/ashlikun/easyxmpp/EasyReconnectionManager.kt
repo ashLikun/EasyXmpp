@@ -95,6 +95,10 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             reconnect()
         } else {
             isReconnectUnavailable = true
+            val connection = weakRefConnection.get()
+            if (connection != null) {
+                XmppUtils.runNew { PingManager.getInstanceFor(connection).pingServerIfNecessary() }
+            }
         }
     }
     /**
@@ -130,6 +134,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         if (it > delayTime || (!isNetwork && currentNetwork)) {
             if (!isNetwork && currentNetwork) {
                 isNetwork = currentNetwork
+                XmppUtils.runMain {
+                    for (listener in reconnectionListeners) {
+                        listener.reconnectionTime(0)
+                    }
+                }
             }
             val connection = weakRefConnection.get() ?: return@Consumer
             if (connection.isConnected) {
@@ -143,11 +152,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             //时间没到    回调
             XmppUtils.loge("重连倒计时 ${delayTime - it}")
             if (!reconnectionListeners.isEmpty()) {
-                XmppUtils.runMain(Consumer {
+                XmppUtils.runMain {
                     for (listener in reconnectionListeners) {
-                        listener.reconnectionTime(delayTime - it)
+                        listener.reconnectionTime((delayTime - it).toInt())
                     }
-                })
+                }
             }
         }
     }

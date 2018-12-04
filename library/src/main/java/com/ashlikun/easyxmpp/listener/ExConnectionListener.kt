@@ -2,7 +2,6 @@ package com.ashlikun.easyxmpp.listener
 
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
-import io.reactivex.functions.Consumer
 import org.jivesoftware.smack.AbstractConnectionListener
 import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.packet.Presence
@@ -53,14 +52,13 @@ class ExConnectionListener : AbstractConnectionListener() {
         XmppUtils.loge("authenticated$resumed")
         //如果没有设置登录状态
         if (!XmppManage.get().config.sendPresence && !resumed) {
-            XmppUtils.runNew(Consumer {
+            XmppUtils.runNew {
                 XmppManage.getRM().isReconnectUnavailable = false
                 //设置离线状态
                 XmppManage.getCM().userData?.updateState(Presence.Type.unavailable)
-
                 //设置状态在线
                 XmppManage.getCM().userData?.updateState(Presence.Type.available)
-            })
+            }
         }
     }
 
