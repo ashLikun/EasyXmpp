@@ -1,5 +1,6 @@
 package com.ashlikun.easyxmpp
 
+import android.accounts.NetworkErrorException
 import com.ashlikun.easyxmpp.listener.EasyReconnectionListener
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
@@ -134,20 +135,26 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         if (it > delayTime || (!isNetwork && currentNetwork)) {
             if (!isNetwork && currentNetwork) {
                 isNetwork = currentNetwork
+                //突然有网了得回掉时间为0
                 XmppUtils.runMain {
                     for (listener in reconnectionListeners) {
                         listener.reconnectionTime(0)
                     }
                 }
             }
-            val connection = weakRefConnection.get() ?: return@Consumer
-            if (connection.isConnected) {
-                connection.disconnect()
+            if (currentNetwork) {
+                val connection = weakRefConnection.get() ?: return@Consumer
+                if (connection.isConnected) {
+                    connection.disconnect()
+                }
+                connection.connect()
+                //如果有登录信息去登录
+                XmppManage.getCM().userData?.neibuLogin()
+                disposable?.dispose()
+            } else {
+                //没有网络继续走
+                throw NetworkErrorException("no network")
             }
-            connection.connect()
-            //如果有登录信息去登录
-            XmppManage.getCM().userData?.neibuLogin()
-            disposable?.dispose()
         } else {
             //时间没到    回调
             XmppUtils.loge("重连倒计时 ${delayTime - it}")

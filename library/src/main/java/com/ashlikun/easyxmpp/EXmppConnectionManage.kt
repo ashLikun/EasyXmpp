@@ -28,7 +28,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      * 用户信息
      */
     var userData: User = User()
-        private set
+        internal set
 
 
     init {

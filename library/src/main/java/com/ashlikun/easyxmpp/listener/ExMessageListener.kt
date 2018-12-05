@@ -10,6 +10,7 @@ import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener
 import org.jivesoftware.smack.filter.*
 import org.jivesoftware.smack.packet.Message
+import org.jivesoftware.smack.packet.id.StanzaIdUtil
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smackx.delay.DelayInformationManager
 import org.jivesoftware.smackx.xhtmlim.packet.XHTMLExtension
@@ -33,6 +34,10 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
             ToTypeFilter.ENTITY_FULL_OR_BARE_JID
     )
     /**
+     * 是否删除过这个用户的离线消息
+     */
+    private val isOfflineDeleteMessage = HashMap<String, Boolean>()
+    /**
      * 这2个是切换主线程的回调
      */
     private val receiveListeners = CopyOnWriteArraySet<ReceiveMessageListener>()
@@ -46,18 +51,16 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
         val message = it as Message
         ChatMessage.changMessageStatus(message, MessageStatus.SUCCESS)
         var chatMessage = ChatMessage.findMessageId(message.stanzaId)
-        XmppUtils.runMain {
-            val to = message.to.asEntityBareJidOrThrow()
-            val chat = chatManage.chatWith(to)
-            for (listener in sendListeners) {
-                listener.onSendMessage(to, message, chatMessage, chat)
+        if (chatMessage != null) {
+            XmppUtils.runMain {
+                val to = message.to.asEntityBareJidOrThrow()
+                val chat = chatManage.chatWith(to)
+                for (listener in sendListeners) {
+                    listener.onSendMessage(to, message, chatMessage, chat)
+                }
             }
         }
     }
-    /**
-     * 是否删除过这个用户的离线消息
-     */
-    private val isOfflineDeleteMessage = HashMap<String, Boolean>()
 
     init {
         chatManage.removeIncomingListener(this)
@@ -104,29 +107,35 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
 
 
     /**
-     * 接收到消息,处理本地已经有的
+     * 接收到消息
      */
     override fun newIncomingMessage(from: EntityBareJid, message: Message, chat: Chat) {
-        //如果本地已经有了就过滤
-        if (!ChatMessage.havaMessage(message)) {
+        //如果本地已经有了就过滤,因为这里的id可能是对方生成的，所以这里加上多个条件判断重复
+        if (!ChatMessage.havaAcceptMessage(message)) {
+            //如果本地有这个消息id了，那么从新生成
+            if (ChatMessage.havaMessage(message.stanzaId)) {
+                message.stanzaId = StanzaIdUtil.newStanzaId()
+            }
             //保存消息到本地
             ChatMessage.getMyAcceptMessage(message).save()
             var chatMessage = ChatMessage.findMessageId(message.stanzaId)
-            if (isOfflineDeleteMessage[XmppManage.getCM().userData.userName] != true && DelayInformationManager.isDelayedStanza(message)) {
-                //通知服务器删除离线消息
-                try {
-                    XmppManage.getOM().deleteMessages()
-                    isOfflineDeleteMessage[XmppManage.getCM().userData.userName] = true
-                } catch (e: Exception) {
-                    if (XmppManage.get().config.isDebug) {
-                        XmppUtils.loge("删除失败$e")
+            if (chatMessage != null) {
+                if (isOfflineDeleteMessage[XmppManage.getCM().userData.userName] != true && DelayInformationManager.isDelayedStanza(message)) {
+                    //通知服务器删除离线消息
+                    try {
+                        XmppManage.getOM().deleteMessages()
+                        isOfflineDeleteMessage[XmppManage.getCM().userData.userName] = true
+                    } catch (e: Exception) {
+                        if (XmppManage.get().config.isDebug) {
+                            XmppUtils.loge("删除失败$e")
+                        }
                     }
                 }
-            }
-            //回调主线程
-            XmppUtils.runMain {
-                for (listener in receiveListeners) {
-                    listener.onReceiveMessage(from, message, chatMessage, chat)
+                //回调主线程
+                XmppUtils.runMain {
+                    for (listener in receiveListeners) {
+                        listener.onReceiveMessage(from, message, chatMessage, chat)
+                    }
                 }
             }
         }

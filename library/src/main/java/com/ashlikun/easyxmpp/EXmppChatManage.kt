@@ -65,7 +65,7 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
         return if (!XmppManage.isAuthenticated()) null else try {
             LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
                     .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                    .where("friendUsername = ?", friendUsername)
+                    .whereAnd("friendUsername = ?", friendUsername)
                     .orderBy("dataTime"))
         } catch (e: Exception) {
             null
@@ -82,7 +82,7 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
         return if (!XmppManage.isAuthenticated()) null else try {
             LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
                     .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                    .where("friendUsername = ?", friendUsername)
+                    .whereAnd("friendUsername = ?", friendUsername)
                     .orderBy("dataTime").limit(start, pageSize))
         } catch (e: Exception) {
             null

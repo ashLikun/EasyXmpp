@@ -13,5 +13,5 @@ import org.jxmpp.jid.EntityBareJid
  * 功能介绍：发送出去的消息监听
  */
 interface SendMessageListener {
-    fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage?, chat: Chat)
+    fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage, chat: Chat)
 }

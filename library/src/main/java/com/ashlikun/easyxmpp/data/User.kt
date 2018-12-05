@@ -56,6 +56,7 @@ data class User(
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .map {
+                    XmppManage.getCM().userData = this
                     XmppManage.getCM().connection.login(userName, password)
                     XmppManage.getCM().connection.isAuthenticated
                 }.subscribe({

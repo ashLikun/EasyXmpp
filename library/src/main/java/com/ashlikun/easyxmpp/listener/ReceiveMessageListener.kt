@@ -14,5 +14,5 @@ import org.jxmpp.jid.EntityBareJid
  */
 interface ReceiveMessageListener {
 
-    fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage?, chat: Chat)
+    fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage, chat: Chat)
 }

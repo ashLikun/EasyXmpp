@@ -1,6 +1,5 @@
 package com.ashlikun.easyxmpp.status
 
-import android.icu.text.DateTimePatternGenerator.PatternInfo.OK
 import android.support.annotation.IntDef
 
 
@@ -17,27 +16,48 @@ object MessageStatus {
      */
     const val SENDING = 0
     /**
+     * 文件发送成功（http） 但是消息还是在发送中
+     * 如图片或者语音或者文件的本地路径
+     */
+    const val FILE_SUCCESS = 1
+    /**
      * 发送成功
      */
-    const val SUCCESS = 1
+    const val SUCCESS = 2
     /**
      * 发送失败
      */
-    const val ERROR = 2
+    const val ERROR = 3
 
 
     @IntDef(value = [SENDING, SUCCESS, ERROR])
     @Retention(AnnotationRetention.SOURCE)
     annotation class Code
 
-    fun isIng(@Code code: Int): Boolean {
-        return code == MessageStatus.SENDING
+    /**
+     * 正在发送中
+     */
+    fun isSendIng(@Code code: Int): Boolean {
+        return code == MessageStatus.SENDING || code == MessageStatus.FILE_SUCCESS
     }
 
+    /**
+     * 文件发送成功
+     */
+    fun isFileSuccess(@Code code: Int): Boolean {
+        return code == MessageStatus.FILE_SUCCESS
+    }
+
+    /**
+     * 发送完成
+     */
     fun isSuccess(@Code code: Int): Boolean {
         return code == MessageStatus.SUCCESS
     }
 
+    /**
+     * 发送错误
+     */
     fun isError(@Code code: Int): Boolean {
         return code == MessageStatus.ERROR
     }

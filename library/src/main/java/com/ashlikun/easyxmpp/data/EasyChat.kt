@@ -81,7 +81,7 @@ class EasyChat constructor(var friendUsername: String) {
         return if (user.userName.isEmpty()) null else try {
             LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
                     .where("meUsername = ?", user.getUser())
-                    .where("friendUsername = ?", friendUsername)
+                    .whereAnd("friendUsername = ?", friendUsername)
                     .orderBy("dataTime"))
         } catch (e: Exception) {
             null
