@@ -3,6 +3,9 @@ package com.ashlikun.easyxmpp.data
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.assit.QueryBuilder
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smackx.chatstates.ChatState
@@ -77,15 +80,39 @@ class EasyChat constructor(var friendUsername: String) {
     /**
      * 查询当前用户对应的所有消息
      */
-    fun findMessage(): List<ChatMessage>? {
-        return if (user.userName.isEmpty()) null else try {
-            LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                    .where("meUsername = ?", user.getUser())
-                    .whereAnd("friendUsername = ?", friendUsername)
-                    .orderBy("dataTime"))
-        } catch (e: Exception) {
-            null
-        }
+    fun findMessage(callback: (List<ChatMessage>?) -> Unit) {
+        Observable.create<List<ChatMessage>?> {
+            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                        .where("meUsername = ?", user.getUser())
+                        .whereAnd("friendUsername = ?", friendUsername)
+                        .orderBy("dataTime"))
+            } catch (e: Exception) {
+                null
+            })
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(callback)
+    }
+
+    /**
+     * 查询当前用户对应的所有消息,加上分页
+     * @param start 开始的行数
+     * @param pageSize 查询多少条数据
+     */
+    fun findMessage(start: Int, pageSize: Int, callback: (List<ChatMessage>?) -> Unit) {
+        Observable.create<List<ChatMessage>?> {
+            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .whereAnd("friendUsername = ?", friendUsername)
+                        .orderBy("dataTime").limit(start, pageSize))
+            } catch (e: Exception) {
+                null
+            })
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(callback)
     }
 
     /**

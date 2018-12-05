@@ -103,12 +103,14 @@ class MainActivity : Activity() {
                 user.login { user, isSuccess, throwable ->
                     Log.e("loginIsSuccess$isSuccess", "userName   $user")
                     if (isSuccess) {
-                        XmppManage.getChatM().findMessage()?.forEach {
-                            it.run {
-                                messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
+                        XmppManage.getChatM().findMessage {
+                            it?.forEach { mes ->
+                                mes.run {
+                                    messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：$friendUsername -- 时间：$dataTime -- 内容：$content")
+                                }
+                                messageSb.append("\n\n")
+                                textView.text = messageSb
                             }
-                            messageSb.append("\n\n")
-                            textView.text = messageSb
                         }
                     }
                 }
