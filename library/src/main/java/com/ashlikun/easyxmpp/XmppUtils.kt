@@ -79,8 +79,15 @@ object XmppUtils {
      * 格式化日期时间
      * 日期时间格式yyyy-MM-dd HH:mm:ss
      */
-    fun formatDatetime(date: Date): String {
-        return datetimeFormat.format(date)
+    fun formatDatetime(date: Date) = datetimeFormat.format(date)
+
+    /**
+     * 吧字符串转换成时间
+     */
+    fun parseDatetime(date: String) = try {
+        datetimeFormat.parse(date)
+    } catch (e: Exception) {
+        null
     }
 
     fun loge(msg: String) {

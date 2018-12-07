@@ -4,6 +4,7 @@ import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.status.MessageStatus
 import com.ashlikun.orm.LiteOrmUtil
+import com.ashlikun.orm.db.annotation.Ignore
 import com.ashlikun.orm.db.annotation.PrimaryKey
 import com.ashlikun.orm.db.annotation.Table
 import com.ashlikun.orm.db.assit.QueryBuilder
@@ -74,6 +75,18 @@ data class ChatMessage(
          */
         var isMeSend: Boolean
 ) {
+    @Ignore
+    val date by lazy {
+        XmppUtils.parseDatetime(dataTime ?: "")
+    }
+
+    fun compare(tt: ChatMessage): Long {
+        return if (date == null || tt.date == null) {
+            Long.MAX_VALUE
+        } else {
+            date!!.time - tt.date!!.time
+        }
+    }
 
     /**
      * 获取xmpp的message对象
@@ -152,6 +165,7 @@ data class ChatMessage(
             false
         }
     }
+
 
     companion object {
         var MESSAGE_TYPE = "type"
