@@ -5,7 +5,6 @@ import com.ashlikun.easyxmpp.listener.ConnectionCallback
 import com.ashlikun.easyxmpp.listener.ExConnectionListener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import org.jivesoftware.smack.packet.Stanza
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
@@ -28,7 +27,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      * 用户信息
      */
     var userData: User = User()
-        private set
+        internal set
 
 
     init {
@@ -109,17 +108,17 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      */
     fun sendStanza(stanza: Stanza, bolock: (iSsuccess: Boolean) -> Unit) {
         Observable.create<Boolean> {
-            try {
+            it.onNext(try {
                 if (connection.isConnected) {
                     connection.sendStanza(stanza)
                     true
                 } else false
             } catch (e: Exception) {
                 false
-            }
+            })
         }.observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.newThread())
-                .subscribe(Consumer(bolock))
+                .subscribe(bolock)
     }
 
     /**

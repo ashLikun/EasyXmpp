@@ -62,7 +62,6 @@ class MainActivity : Activity() {
     }
 
     private fun sendMessage() {
-        easyChat.sendMessage("我是李坤,这是第几条$count")
         handler.postDelayed(Runnable {
             easyChat.sendMessage("我是李坤,这是第几条$count")
             count++
@@ -104,20 +103,22 @@ class MainActivity : Activity() {
                 user.login { user, isSuccess, throwable ->
                     Log.e("loginIsSuccess$isSuccess", "userName   $user")
                     if (isSuccess) {
-                        XmppManage.getChatM().findMessage()?.forEach {
-                            it.run {
-                                messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
+                        XmppManage.getChatM().findMessage {
+                            it?.forEach { mes ->
+                                mes.run {
+                                    messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：$friendUsername -- 时间：$dataTime -- 内容：$content")
+                                }
+                                messageSb.append("\n\n")
+                                textView.text = messageSb
                             }
-                            messageSb.append("\n\n")
-                            textView.text = messageSb
                         }
                     }
                 }
             }
         })
         easyChat = EasyChat("zhaoyang")
-        XmppManage.getChatM().addReceiveListener(object : ReceiveMessageListener {
-            override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage?, chat: Chat) {
+        easyChat.addReceiveListener(object : ReceiveMessageListener {
+            override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage, chat: Chat) {
                 dbMessage?.run {
                     messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
                 }
@@ -125,8 +126,8 @@ class MainActivity : Activity() {
                 textView.text = messageSb
             }
         })
-        XmppManage.getChatM().addSendListener(object : SendMessageListener {
-            override fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage?, chat: Chat) {
+        easyChat.addSendListener(object : SendMessageListener {
+            override fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage, chat: Chat) {
                 dbMessage?.run {
                     messageSb.append("${if (isMeSend) "我发送的" else "我接收的"}   用户：${friendUsername} -- 时间：${dataTime} -- 内容：${content}")
                 }

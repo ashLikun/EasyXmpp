@@ -6,6 +6,9 @@ import com.ashlikun.easyxmpp.listener.ReceiveMessageListener
 import com.ashlikun.easyxmpp.listener.SendMessageListener
 import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.assit.QueryBuilder
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.chat2.ChatManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
@@ -47,29 +50,37 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
     /**
      * 查询当前用户对应的所有消息
      */
-    fun findMessage(): List<ChatMessage>? {
-        return if (!XmppManage.isAuthenticated()) null else try {
-            LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                    .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                    .orderBy("dataTime"))
-        } catch (e: Exception) {
-            null
-        }
+    fun findMessage(callback: (List<ChatMessage>?) -> Unit) {
+        Observable.create<List<ChatMessage>?> {
+            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .orderBy("dataTime"))
+            } catch (e: Exception) {
+                null
+            })
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(callback)
     }
 
     /**
      * 查询当前用户对应的所有消息
      * @param friendUsername 对方名字
      */
-    fun findMessage(friendUsername: String): List<ChatMessage>? {
-        return if (!XmppManage.isAuthenticated()) null else try {
-            LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                    .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                    .where("friendUsername = ?", friendUsername)
-                    .orderBy("dataTime"))
-        } catch (e: Exception) {
-            null
-        }
+    fun findMessage(friendUsername: String, callback: (List<ChatMessage>?) -> Unit) {
+        Observable.create<List<ChatMessage>?> {
+            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .whereAnd("friendUsername = ?", friendUsername)
+                        .orderBy("dataTime"))
+            } catch (e: Exception) {
+                null
+            })
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(callback)
     }
 
     /**
@@ -78,15 +89,19 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
      * @param start 开始的行数
      * @param pageSize 查询多少条数据
      */
-    fun findMessage(friendUsername: String, start: Int, pageSize: Int): List<ChatMessage>? {
-        return if (!XmppManage.isAuthenticated()) null else try {
-            LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                    .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                    .where("friendUsername = ?", friendUsername)
-                    .orderBy("dataTime").limit(start, pageSize))
-        } catch (e: Exception) {
-            null
-        }
+    fun findMessage(friendUsername: String, start: Int, pageSize: Int, callback: (List<ChatMessage>?) -> Unit) {
+        Observable.create<List<ChatMessage>?> {
+            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .whereAnd("friendUsername = ?", friendUsername)
+                        .orderBy("dataTime").limit(start, pageSize))
+            } catch (e: Exception) {
+                null
+            })
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(callback)
     }
 
     /**

@@ -4,8 +4,10 @@ import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.status.MessageStatus
 import com.ashlikun.orm.LiteOrmUtil
+import com.ashlikun.orm.db.annotation.Ignore
 import com.ashlikun.orm.db.annotation.PrimaryKey
 import com.ashlikun.orm.db.annotation.Table
+import com.ashlikun.orm.db.assit.QueryBuilder
 import com.ashlikun.orm.db.assit.WhereBuilder
 import com.ashlikun.orm.db.enums.AssignType
 import com.ashlikun.orm.db.model.ColumnsValue
@@ -53,6 +55,7 @@ data class ChatMessage(
         /**
          * 消息的本地文件路径
          * 用于自己发送图片或者语音或者文件的本地路径
+         * 本地路径可能会失效
          */
         var localFile: String?,
         /**
@@ -72,6 +75,18 @@ data class ChatMessage(
          */
         var isMeSend: Boolean
 ) {
+    @Ignore
+    val date by lazy {
+        XmppUtils.parseDatetime(dataTime ?: "")
+    }
+
+    fun compare(tt: ChatMessage): Long {
+        return if (date == null || tt.date == null) {
+            Long.MAX_VALUE
+        } else {
+            date!!.time - tt.date!!.time
+        }
+    }
 
     /**
      * 获取xmpp的message对象
@@ -92,14 +107,16 @@ data class ChatMessage(
     }
 
     /**
-     * 发送一条消息给Chat
+     * 发送一条消息
+     * 必须有[friendUsername]
+     *
      * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
      */
     fun send(): Boolean {
-        if (friendUsername != null) {
-            return send(XmppManage.getChatM().getChat(friendUsername!!))
+        return if (friendUsername != null) {
+            send(XmppManage.getChatM().getChat(friendUsername!!))
         } else {
-            return false
+            false
         }
     }
 
@@ -114,10 +131,13 @@ data class ChatMessage(
                 if (message.to == null) {
                     message.to = chat?.xmppAddressOfChatPartner
                 }
+                if (friendUsername == null) {
+                    friendUsername = message.to.localpartOrNull.toString()
+                }
                 //先保存数据库,在发送回调的时候再改变状态
                 messageStatus = MessageStatus.SENDING
                 save()
-                chat?.send(content)
+                chat?.send(message)
                 true
             } catch (e: SmackException.NotConnectedException) {
                 e.printStackTrace()
@@ -146,6 +166,7 @@ data class ChatMessage(
         }
     }
 
+
     companion object {
         var MESSAGE_TYPE = "type"
         /**
@@ -169,7 +190,7 @@ data class ChatMessage(
                     getMessageType(message.body),
                     message.body,
                     "",
-                    message.to.localpartOrNull.toString(),
+                    message.to?.localpartOrNull?.toString(),
                     XmppManage.getCM().userData.getUser(),
                     XmppUtils.formatDatetime(Date()),
                     true
@@ -187,7 +208,7 @@ data class ChatMessage(
                     getMessageType(message.body),
                     message.body,
                     "",
-                    message.from.localpartOrNull.toString(),
+                    message.from?.localpartOrNull?.toString(),
                     XmppManage.getCM().userData.getUser(),
                     XmppUtils.formatDatetime(date ?: Date()),
                     false
@@ -248,11 +269,17 @@ data class ChatMessage(
         }
 
         /**
-         * 查找是否有这条消息
+         * 查找是否有这条消息,接收的消息
          */
-        fun havaMessage(message: Message): Boolean {
-            return havaMessage(message.stanzaId ?: "")
+        fun havaAcceptMessage(message: Message): Boolean {
+            return try {
+                LiteOrmUtil.get().queryCount(QueryBuilder(ChatMessage::class.java)
+                        .where("messageId = ?", message.stanzaId)
+                        .whereAnd("friendUsername = ?", message.from?.localpartOrNull?.toString())
+                        .whereAnd("isMeSend = ?", false)) > 0
+            } catch (e: Exception) {
+                false
+            }
         }
-
     }
 }
