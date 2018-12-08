@@ -68,7 +68,7 @@ class EasyChat constructor(var friendUsername: String) {
      * 发送一条消息给Chat
      * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
      */
-    fun sendMessage(content: String): Boolean {
+    fun sendMessage(content: String): ChatMessage? {
         val stanza = Message()
         stanza.body = content
         stanza.type = Message.Type.chat
@@ -79,10 +79,10 @@ class EasyChat constructor(var friendUsername: String) {
      * 发送一条消息给Chat
      * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
      */
-    fun sendMessage(content: Message): Boolean {
+    fun sendMessage(content: Message): ChatMessage? {
         //先保存数据库,在发送回调的时候再改变状态
         var chatManage = ChatMessage.getMySendMessage(content)
-        return chatManage.send(chat)
+        return if (chatManage.send(chat) == -1) null else chatManage
     }
 
     /**

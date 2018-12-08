@@ -4,7 +4,6 @@ import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import com.ashlikun.easyxmpp.status.MessageStatus
 import com.ashlikun.orm.LiteOrmUtil
-import com.ashlikun.orm.db.annotation.Ignore
 import com.ashlikun.orm.db.annotation.PrimaryKey
 import com.ashlikun.orm.db.annotation.Table
 import com.ashlikun.orm.db.assit.QueryBuilder
@@ -73,18 +72,20 @@ data class ChatMessage(
         /**
          * 当前消息是否自己发出的
          */
+
         var isMeSend: Boolean
 ) {
-    @Ignore
-    val date by lazy {
-        XmppUtils.parseDatetime(dataTime ?: "")
-    }
 
+    fun date(): Date? = XmppUtils.parseDatetime(dataTime ?: "")
+
+    /**
+     * 计算与另一个message的时间间隔ms
+     */
     fun compare(tt: ChatMessage): Long {
-        return if (date == null || tt.date == null) {
+        return if (date() == null || tt.date() == null) {
             Long.MAX_VALUE
         } else {
-            date!!.time - tt.date!!.time
+            date()!!.time - tt.date()!!.time
         }
     }
 
@@ -111,21 +112,27 @@ data class ChatMessage(
      * 必须有[friendUsername]
      *
      * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
+     *          1:发送成功
+     *          -1：检查是否具备发送条件错误，数据都没去保存呢
+     *          -2：发送的时候错误，数据已经保存本地了
      */
-    fun send(): Boolean {
+    fun send(): Int {
         return if (friendUsername != null) {
             send(XmppManage.getChatM().getChat(friendUsername!!))
         } else {
-            false
+            -1
         }
     }
 
     /**
      * 发送一条消息给Chat
      * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
+     *          1:发送成功
+     *          -1：检查是否连接错误，数据都没去保存呢
+     *          -2：发送的时候错误，数据已经保存本地了
      */
-    fun send(chat: Chat?): Boolean {
-        return if (!XmppManage.isConnected() || !XmppManage.isAuthenticated() || chat == null) false else
+    fun send(chat: Chat?): Int {
+        return if (!XmppManage.isConnected() || !XmppManage.isAuthenticated() || chat == null) -1 else
             try {
                 var message = getMessage()
                 if (message.to == null) {
@@ -136,21 +143,23 @@ data class ChatMessage(
                 }
                 //先保存数据库,在发送回调的时候再改变状态
                 messageStatus = MessageStatus.SENDING
-                save()
-                chat?.send(message)
-                true
+                if (save()) {
+                    chat?.send(message)
+                    1
+                }
+                -2
             } catch (e: SmackException.NotConnectedException) {
                 e.printStackTrace()
                 messageId?.let {
                     changMessageStatus(messageId!!, MessageStatus.ERROR)
                 }
-                false
+                -2
             } catch (e: InterruptedException) {
                 e.printStackTrace()
                 messageId?.let {
                     changMessageStatus(messageId!!, MessageStatus.ERROR)
                 }
-                false
+                -2
             }
     }
 
@@ -168,7 +177,8 @@ data class ChatMessage(
 
 
     companion object {
-        var MESSAGE_TYPE = "type"
+        const val MESSAGE_TYPE = "type"
+
         /**
          * 获取这个消息的json里面的type
          */
