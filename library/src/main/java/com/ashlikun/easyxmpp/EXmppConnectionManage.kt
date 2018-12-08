@@ -118,7 +118,10 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
             })
         }.observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.newThread())
-                .subscribe(bolock)
+                .subscribe(bolock, {
+                    bolock(false)
+                })
+
     }
 
     /**

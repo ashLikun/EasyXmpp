@@ -18,6 +18,7 @@ import org.jxmpp.jid.EntityBareJid;
  * 功能介绍：
  */
 public class AA {
+    public transient int anInt = 1;
     @Override
     public boolean equals(Object obj) {
         XmppManage.Companion.getChatM().addSendListener(new SendMessageListener() {
