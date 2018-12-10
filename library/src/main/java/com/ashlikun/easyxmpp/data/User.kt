@@ -7,7 +7,6 @@ import io.reactivex.schedulers.Schedulers
 import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.XMPPException
 import org.jivesoftware.smack.packet.Presence
-import org.jxmpp.jid.EntityFullJid
 import java.io.IOException
 
 
@@ -23,20 +22,16 @@ data class User(
          */
         var userName: String = "",
         var password: String = "") {
-    /**
-     * 获取xmpp user对象
-     */
-    fun getUserJid(): EntityFullJid {
-        return XmppManage.getCM().connection.user
-    }
 
     /**
      * 获取xmpp user对象 String
      */
     fun getUser(): String {
-        return getUserJid().localpart.toString()
+        if (XmppManage.getCM().connection.user == null) {
+            return userName
+        }
+        return XmppManage.getCM().connection.user?.localpart.toString()
     }
-
 
     /**
      * 直接登录内部调用
