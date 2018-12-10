@@ -64,8 +64,8 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
             } catch (e: Exception) {
                 null
             })
-        }.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
+        }.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(callback, {
                     callback(null)
                 })
@@ -90,8 +90,8 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
             } catch (e: Exception) {
                 null
             })
-        }.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
+        }.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(callback, {
                     callback(null)
                 })
@@ -115,8 +115,8 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
             } catch (e: Exception) {
                 null
             })
-        }.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
+        }.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(callback, {
                     callback(null)
                 })
@@ -140,8 +140,8 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
             } catch (e: Exception) {
                 null
             })
-        }.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
+        }.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(callback, {
                     callback(0)
                 })

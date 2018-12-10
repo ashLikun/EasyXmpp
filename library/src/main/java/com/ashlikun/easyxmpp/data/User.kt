@@ -47,15 +47,14 @@ data class User(
      * 登录,请在失败的时候自己处理
      */
     fun login(bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
-        Observable.just(1)
+        Observable.just(1).map {
+            XmppManage.getCM().userData = this
+            XmppManage.getCM().connection.login(userName, password)
+            XmppManage.getCM().connection.isAuthenticated
+        }
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .map {
-                    XmppManage.getCM().userData = this
-                    XmppManage.getCM().connection.login(userName, password)
-                    XmppManage.getCM().connection.isAuthenticated
-                }.subscribe({
-
+                .subscribe({
                     if (it) {
                         bolock(this, it, null)
                     } else {

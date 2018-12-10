@@ -118,8 +118,8 @@ class EasyChat constructor(var friendUsername: String) {
             } catch (e: Exception) {
                 null
             })
-        }.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
+        }.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(callback, {
                     callback(null)
                 })
@@ -140,8 +140,8 @@ class EasyChat constructor(var friendUsername: String) {
             } catch (e: Exception) {
                 null
             })
-        }.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
+        }.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(callback, {
                     callback(null)
                 })
