@@ -95,6 +95,10 @@ class MainActivity : Activity() {
                 .isDebug(true)
                 .apply()
         XmppManage.getCM().addCallback(object : ConnectionCallback {
+            override fun authenticated(connection: XMPPConnection, resumed: Boolean) {
+
+            }
+
             override fun connectionError(isClose: Boolean, connection: Exception) {
 
             }

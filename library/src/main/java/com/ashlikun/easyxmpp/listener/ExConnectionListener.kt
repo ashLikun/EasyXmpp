@@ -47,7 +47,7 @@ class ExConnectionListener : AbstractConnectionListener() {
      * @param connection
      * @param resumed
      */
-    override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
+    override fun authenticated(connection: XMPPConnection, resumed: Boolean) {
         super.authenticated(connection, resumed)
         XmppUtils.loge("authenticated$resumed")
         //如果没有设置登录状态
@@ -59,6 +59,9 @@ class ExConnectionListener : AbstractConnectionListener() {
                 //设置状态在线
                 XmppManage.getCM().userData?.updateState(Presence.Type.available)
             }
+        }
+        for (callback in callbackList) {
+            callback.authenticated(connection, resumed)
         }
     }
 

@@ -25,4 +25,10 @@ interface ConnectionCallback {
      */
     fun connectionError(isClose: Boolean, connection: Exception)
 
+    /**
+     * 登录成功
+     * @param resumed 是否是恢复的xmpp，true是
+     */
+    fun authenticated(connection: XMPPConnection, resumed: Boolean)
+
 }
