@@ -86,6 +86,10 @@ class XmppManage private constructor() {
     fun getDomain(): String = connectionManage.domain
 
 
+    /**
+     * 全局初始化
+     * 但是不会去连接服务器,也不会登录服务器
+     */
     internal fun init(configuration: XMPPTCPConnectionConfiguration, config: XmppConfig) {
         this.config = config
         val connection = XMPPTCPConnection(configuration)
@@ -100,6 +104,5 @@ class XmppManage private constructor() {
         EasyReconnectionManager.getInstanceFor(connection)
         //自动回执消息
         DeliveryReceiptManager.getInstanceFor(connection).autoAddDeliveryReceiptRequests()
-        connectionManage.connect()
     }
 }

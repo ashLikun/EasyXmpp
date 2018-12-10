@@ -94,6 +94,7 @@ class MainActivity : Activity() {
                 .host("xmpp.o6o6o.com")
                 .isDebug(true)
                 .apply()
+        XmppManage.getCM().connect()
         XmppManage.getCM().addCallback(object : ConnectionCallback {
             override fun authenticated(connection: XMPPConnection, resumed: Boolean) {
 
