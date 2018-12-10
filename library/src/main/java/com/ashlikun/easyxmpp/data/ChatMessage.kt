@@ -72,8 +72,11 @@ data class ChatMessage(
         /**
          * 当前消息是否自己发出的
          */
-
-        var isMeSend: Boolean
+        var isMeSend: Boolean,
+        /**
+         * 是否读取
+         */
+        var isRead: Boolean
 ) {
 
     fun date(): Date? = XmppUtils.parseDatetime(dataTime ?: "")
@@ -203,7 +206,7 @@ data class ChatMessage(
                     message.to?.localpartOrNull?.toString(),
                     XmppManage.getCM().userData.getUser(),
                     XmppUtils.formatDatetime(Date()),
-                    true
+                    true,false
             )
         }
 
@@ -221,7 +224,7 @@ data class ChatMessage(
                     message.from?.localpartOrNull?.toString(),
                     XmppManage.getCM().userData.getUser(),
                     XmppUtils.formatDatetime(date ?: Date()),
-                    false
+                    false,false
             )
         }
 

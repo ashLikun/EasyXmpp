@@ -29,7 +29,7 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
     /**
      * 聊天管理器
      */
-    val chatManager: ChatManager = ChatManager.getInstanceFor(connection)
+    private val chatManager: ChatManager = ChatManager.getInstanceFor(connection)
 
     private var messageListener = ExMessageListener(connection, chatManager)
 
@@ -49,34 +49,18 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
 
     /**
      * 查询当前用户对应的所有消息
+     * @param friendUsername  对方名字 如果是null就是全部的
      */
-    fun findMessage(callback: (List<ChatMessage>?) -> Unit) {
+    fun findMessage(friendUsername: String? = null, callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
             it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
-                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                var query = QueryBuilder(ChatMessage::class.java)
                         .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                        .orderBy("dataTime"))
-            } catch (e: Exception) {
-                null
-            })
-        }.observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
-                .subscribe(callback, {
-                    callback(null)
-                })
-    }
-
-    /**
-     * 查询当前用户对应的所有消息
-     * @param friendUsername 对方名字
-     */
-    fun findMessage(friendUsername: String, callback: (List<ChatMessage>?) -> Unit) {
-        Observable.create<List<ChatMessage>?> {
-            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
-                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                        .whereAnd("friendUsername = ?", friendUsername)
-                        .orderBy("dataTime"))
+                if (friendUsername?.isNotEmpty() == true) {
+                    query.whereAnd("friendUsername = ?", friendUsername)
+                }
+                query.orderBy("dataTime")
+                LiteOrmUtil.get().query(query)
             } catch (e: Exception) {
                 null
             })
@@ -89,17 +73,20 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
 
     /**
      * 查询当前用户对应的所有消息,加上分页
-     * @param friendUsername 对方名字
+     * @param friendUsername 对方名字 如果是null就是全部的
      * @param start 开始的行数
      * @param pageSize 查询多少条数据
      */
-    fun findMessage(friendUsername: String, start: Int, pageSize: Int, callback: (List<ChatMessage>?) -> Unit) {
+    fun findMessage(friendUsername: String? = null, start: Int, pageSize: Int, callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
             it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
-                LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
+                var query = QueryBuilder(ChatMessage::class.java)
                         .where("meUsername = ?", XmppManage.getCM().userData.getUser())
-                        .whereAnd("friendUsername = ?", friendUsername)
-                        .orderBy("dataTime").limit(start, pageSize))
+                if (friendUsername?.isNotEmpty() == true) {
+                    query.whereAnd("friendUsername = ?", friendUsername)
+                }
+                query.orderBy("dataTime").limit(start, pageSize)
+                LiteOrmUtil.get().query(query)
             } catch (e: Exception) {
                 null
             })
@@ -109,6 +96,57 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
                     callback(null)
                 })
     }
+
+    /**
+     * 查询当前用户对应的所有 未读消息
+     * @param friendUsername  对方名字 如果是null就是全部的
+     */
+    fun findUnreadMessage(friendUsername: String? = null, callback: (List<ChatMessage>?) -> Unit) {
+        Observable.create<List<ChatMessage>?> {
+            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+                var query = QueryBuilder(ChatMessage::class.java)
+                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .whereAnd("isRead = ?", false)
+                if (friendUsername?.isNotEmpty() == true) {
+                    query.whereAnd("friendUsername = ?", friendUsername)
+                }
+                query.orderBy("dataTime")
+                LiteOrmUtil.get().query(query)
+            } catch (e: Exception) {
+                null
+            })
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(callback, {
+                    callback(null)
+                })
+    }
+
+    /**
+     * 查询当前用户对应的所有 未读消息 数量
+     * @param friendUsername 对方名字 如果是null就是全部的
+     */
+    fun findUnreadCount(friendUsername: String? = null, callback: (Long) -> Unit) {
+        Observable.create<Long> {
+            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+                var query = QueryBuilder(ChatMessage::class.java)
+                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .whereAnd("isRead = ?", false)
+                if (friendUsername?.isNotEmpty() == true) {
+                    query.whereAnd("friendUsername = ?", friendUsername)
+                }
+                query.orderBy("dataTime")
+                LiteOrmUtil.get().queryCount(query)
+            } catch (e: Exception) {
+                null
+            })
+        }.observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread())
+                .subscribe(callback, {
+                    callback(0)
+                })
+    }
+
 
     /**
      * 添加接受消息监听
