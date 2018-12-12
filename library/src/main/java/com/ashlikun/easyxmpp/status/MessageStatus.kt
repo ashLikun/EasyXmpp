@@ -16,10 +16,11 @@ object MessageStatus {
      */
     const val SENDING = 0
     /**
-     * 文件发送成功（http） 但是消息还是在发送中
+     * 文件上传成功（http） 但是消息还是在发送中
      * 如图片或者语音或者文件的本地路径
      */
     const val FILE_SUCCESS = 1
+
     /**
      * 发送成功
      */
@@ -28,9 +29,12 @@ object MessageStatus {
      * 发送失败
      */
     const val ERROR = 3
+    /**
+     * 文件上传失败
+     */
+    const val FILE_ERROR = 4
 
-
-    @IntDef(value = [SENDING, SUCCESS, ERROR])
+    @IntDef(value = [SENDING, FILE_SUCCESS, SUCCESS, ERROR, FILE_ERROR])
     @Retention(AnnotationRetention.SOURCE)
     annotation class Code
 
@@ -60,5 +64,12 @@ object MessageStatus {
      */
     fun isError(@Code code: Int): Boolean {
         return code == MessageStatus.ERROR
+    }
+
+    /**
+     * 发送错误
+     */
+    fun isFileError(@Code code: Int): Boolean {
+        return code == MessageStatus.FILE_ERROR
     }
 }
