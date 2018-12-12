@@ -60,9 +60,12 @@ class ExConnectionListener : AbstractConnectionListener() {
                 XmppManage.getCM().userData?.updateState(Presence.Type.available)
             }
         }
-        for (callback in callbackList) {
-            callback.authenticated(connection, resumed)
+        XmppUtils.runMain {
+            for (callback in callbackList) {
+                callback.authenticated(connection, resumed)
+            }
         }
+
     }
 
     /**
@@ -71,9 +74,12 @@ class ExConnectionListener : AbstractConnectionListener() {
     override fun connectionClosed() {
         super.connectionClosed()
         XmppUtils.loge("connectionClosed")
-        for (callback in callbackList) {
-            callback.connectionError(true, Exception("connection is closed"))
+        XmppUtils.runMain {
+            for (callback in callbackList) {
+                callback.connectionError(true, Exception("connection is closed"))
+            }
         }
+
     }
 
     /**
@@ -84,8 +90,10 @@ class ExConnectionListener : AbstractConnectionListener() {
     override fun connectionClosedOnError(e: Exception) {
         super.connectionClosedOnError(e)
         XmppUtils.loge("connectionClosedOnError" + e.toString())
-        for (callback in callbackList) {
-            callback.connectionError(false, e)
+        XmppUtils.runMain {
+            for (callback in callbackList) {
+                callback.connectionError(false, e)
+            }
         }
     }
 }
