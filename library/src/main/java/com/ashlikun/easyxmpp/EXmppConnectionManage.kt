@@ -32,7 +32,6 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
 
     init {
         connection.addConnectionListener(callbackListener)
-
     }
 
     /**

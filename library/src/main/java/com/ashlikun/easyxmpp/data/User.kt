@@ -44,11 +44,17 @@ data class User(
     }
 
     /**
+     * 只有保存信息后才能在后续一些操作有效
+     */
+    fun saveInfo(){
+        XmppManage.getCM().userData = this
+    }
+    /**
      * 登录,请在失败的时候自己处理
      */
     fun login(bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
         Observable.just(1).map {
-            XmppManage.getCM().userData = this
+            saveInfo()
             XmppManage.getCM().connection.login(userName, password)
             XmppManage.getCM().connection.isAuthenticated
         }
