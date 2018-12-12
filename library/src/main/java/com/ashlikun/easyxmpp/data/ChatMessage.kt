@@ -132,7 +132,8 @@ data class ChatMessage(
      * @return 是否加入发送消息的队列成功，具体发送成功请参考[com.ashlikun.easyxmpp.listener.ExMessageListener.messagSendListener]
      *          1:发送成功
      *          -1：检查是否连接错误，数据都没去保存呢
-     *          -2：发送的时候错误，数据已经保存本地了
+     *          -2：发送过程错误，没有连接服务器
+     *          -3: 拦截错误
      */
     fun send(chat: Chat?): Int {
         return if (!XmppManage.isConnected() || !XmppManage.isAuthenticated() || chat == null) -1 else
@@ -149,8 +150,9 @@ data class ChatMessage(
                 if (save()) {
                     chat?.send(message)
                     1
+                } else {
+                    -1
                 }
-                -2
             } catch (e: SmackException.NotConnectedException) {
                 e.printStackTrace()
                 messageId?.let {
@@ -162,7 +164,7 @@ data class ChatMessage(
                 messageId?.let {
                     changMessageStatus(messageId!!, MessageStatus.ERROR)
                 }
-                -2
+                -3
             }
     }
 
@@ -206,7 +208,7 @@ data class ChatMessage(
                     message.to?.localpartOrNull?.toString(),
                     XmppManage.getCM().userData.getUser(),
                     XmppUtils.formatDatetime(Date()),
-                    true,false
+                    true, false
             )
         }
 
@@ -224,7 +226,7 @@ data class ChatMessage(
                     message.from?.localpartOrNull?.toString(),
                     XmppManage.getCM().userData.getUser(),
                     XmppUtils.formatDatetime(date ?: Date()),
-                    false,false
+                    false, false
             )
         }
 
