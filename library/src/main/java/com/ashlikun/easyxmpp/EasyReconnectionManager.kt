@@ -79,7 +79,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
         }
 
-        override fun connectionClosedOnError(e: Exception?) {
+        override fun connectionClosedOnError(e: Exception) {
+            //是否在其他设备登录
+            if (XmppUtils.isLoginConflict(e)) {
+                return
+            }
             if (!isAutomaticReconnectEnabled) {
                 return
             }
@@ -341,3 +345,4 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         }
     }
 }
+
