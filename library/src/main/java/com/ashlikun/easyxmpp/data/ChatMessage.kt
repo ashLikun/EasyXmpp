@@ -206,7 +206,7 @@ data class ChatMessage(
                     message.body,
                     "",
                     message.to?.localpartOrNull?.toString(),
-                    XmppManage.getCM().userData.getUser(),
+                    XmppManage.getCM().getUserName(),
                     XmppUtils.formatDatetime(Date()),
                     true, false
             )
@@ -224,7 +224,7 @@ data class ChatMessage(
                     message.body,
                     "",
                     message.from?.localpartOrNull?.toString(),
-                    XmppManage.getCM().userData.getUser(),
+                    XmppManage.getCM().getUserName(),
                     XmppUtils.formatDatetime(date ?: Date()),
                     false, false
             )

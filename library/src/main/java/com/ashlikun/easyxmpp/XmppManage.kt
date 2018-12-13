@@ -1,5 +1,6 @@
 package com.ashlikun.easyxmpp
 
+import com.ashlikun.easyxmpp.data.User
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jivesoftware.smackx.offline.OfflineMessageManager
@@ -104,5 +105,12 @@ class XmppManage private constructor() {
         EasyReconnectionManager.getInstanceFor(connection)
         //自动回执消息
         DeliveryReceiptManager.getInstanceFor(connection).autoAddDeliveryReceiptRequests()
+    }
+
+    /**
+     * 清空登录信息
+     */
+    fun cleanLogin() {
+        getCM().userData = User()
     }
 }

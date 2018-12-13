@@ -55,9 +55,9 @@ class ExConnectionListener : AbstractConnectionListener() {
             XmppUtils.runNew {
                 XmppManage.getRM().isReconnectUnavailable = false
                 //设置离线状态
-                XmppManage.getCM().userData?.updateState(Presence.Type.unavailable)
+                XmppManage.getCM().userData.updateState(Presence.Type.unavailable)
                 //设置状态在线
-                XmppManage.getCM().userData?.updateState(Presence.Type.available)
+                XmppManage.getCM().userData.updateState(Presence.Type.available)
             }
         }
         XmppUtils.runMain {

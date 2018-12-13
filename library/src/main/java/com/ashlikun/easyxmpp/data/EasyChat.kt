@@ -25,10 +25,6 @@ import java.util.concurrent.CopyOnWriteArraySet
  */
 class EasyChat constructor(var friendUsername: String) {
     /**
-     * 当前用户信息
-     */
-    var user: User
-    /**
      * xmpp的聊天对象
      */
     var chat: Chat? = null
@@ -40,7 +36,6 @@ class EasyChat constructor(var friendUsername: String) {
 
     init {
         chat = XmppManage.getChatM().getChat(friendUsername)
-        user = XmppManage.getCM().userData
         //添加消息监听
         XmppManage.getChatM().addReceiveListener(object : ReceiveMessageListener {
             override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage, messageChat: Chat) {
@@ -62,7 +57,7 @@ class EasyChat constructor(var friendUsername: String) {
         })
     }
 
-    fun getUserName(): String = user.userName
+    fun getUserName(): String = XmppManage.getCM().getUserName()
 
     /**
      * 发送一条消息给Chat
@@ -110,9 +105,9 @@ class EasyChat constructor(var friendUsername: String) {
      */
     fun findMessage(callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
-            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+            it.onNext(if (!XmppManage.getCM().userData.isValid()) null else try {
                 LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                        .where("meUsername = ?", user.getUser())
+                        .where("meUsername = ?", getUserName())
                         .whereAnd("friendUsername = ?", friendUsername)
                         .orderBy("dataTime"))
             } catch (e: Exception) {
@@ -132,9 +127,9 @@ class EasyChat constructor(var friendUsername: String) {
      */
     fun findMessage(start: Int, pageSize: Int, callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
-            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+            it.onNext(if (!XmppManage.getCM().userData.isValid()) null else try {
                 LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
-                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .where("meUsername = ?", getUserName())
                         .whereAnd("friendUsername = ?", friendUsername)
                         .orderBy("dataTime").limit(start, pageSize))
             } catch (e: Exception) {

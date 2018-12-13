@@ -120,11 +120,11 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
             ChatMessage.getMyAcceptMessage(message).save()
             var chatMessage = ChatMessage.findMessageId(message.stanzaId)
             if (chatMessage != null) {
-                if (isOfflineDeleteMessage[XmppManage.getCM().userData.userName] != true && DelayInformationManager.isDelayedStanza(message)) {
+                if (isOfflineDeleteMessage[XmppManage.getCM().getUserName()] != true && DelayInformationManager.isDelayedStanza(message)) {
                     //通知服务器删除离线消息
                     try {
                         XmppManage.getOM().deleteMessages()
-                        isOfflineDeleteMessage[XmppManage.getCM().userData.userName] = true
+                        isOfflineDeleteMessage[XmppManage.getCM().getUserName()] = true
                     } catch (e: Exception) {
                         if (XmppManage.get().config.isDebug) {
                             XmppUtils.loge("删除失败$e")

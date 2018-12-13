@@ -29,6 +29,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
     var userData: User = User()
         internal set
 
+    fun getUserName() = userData.getUser()
 
     init {
         connection.addConnectionListener(callbackListener)
@@ -135,5 +136,6 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
     fun removeCallback(callback: ConnectionCallback) {
         callbackListener.removeCallback(callback);
     }
+
 
 }

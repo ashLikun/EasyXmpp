@@ -53,9 +53,9 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
      */
     fun findMessage(friendUsername: String? = null, callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
-            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+            it.onNext(if (!XmppManage.getCM().userData.isValid()) null else try {
                 var query = QueryBuilder(ChatMessage::class.java)
-                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .where("meUsername = ?", XmppManage.getCM().getUserName())
                 if (friendUsername?.isNotEmpty() == true) {
                     query.whereAnd("friendUsername = ?", friendUsername)
                 }
@@ -79,9 +79,9 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
      */
     fun findMessage(friendUsername: String? = null, start: Int, pageSize: Int, callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
-            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+            it.onNext(if (!XmppManage.getCM().userData.isValid()) null else try {
                 var query = QueryBuilder(ChatMessage::class.java)
-                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .where("meUsername = ?", XmppManage.getCM().getUserName())
                 if (friendUsername?.isNotEmpty() == true) {
                     query.whereAnd("friendUsername = ?", friendUsername)
                 }
@@ -103,9 +103,9 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
      */
     fun findUnreadMessage(friendUsername: String? = null, callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
-            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+            it.onNext(if (!XmppManage.getCM().userData.isValid()) null else try {
                 var query = QueryBuilder(ChatMessage::class.java)
-                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .where("meUsername = ?", XmppManage.getCM().getUserName())
                         .whereAnd("isRead = ?", false)
                 if (friendUsername?.isNotEmpty() == true) {
                     query.whereAnd("friendUsername = ?", friendUsername)
@@ -128,9 +128,9 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
      */
     fun findUnreadCount(friendUsername: String? = null, callback: (Long) -> Unit) {
         Observable.create<Long> {
-            it.onNext(if (XmppManage.getCM().userData.getUser().isEmpty()) null else try {
+            it.onNext(if (!XmppManage.getCM().userData.isValid()) null else try {
                 var query = QueryBuilder(ChatMessage::class.java)
-                        .where("meUsername = ?", XmppManage.getCM().userData.getUser())
+                        .where("meUsername = ?", XmppManage.getCM().getUserName())
                         .whereAnd("isRead = ?", false)
                 if (friendUsername?.isNotEmpty() == true) {
                     query.whereAnd("friendUsername = ?", friendUsername)

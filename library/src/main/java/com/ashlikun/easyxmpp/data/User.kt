@@ -81,6 +81,11 @@ data class User(
     }
 
     /**
+     * 数据是否有效
+     */
+    fun isValid() = userName.isNotEmpty() && password.isNotEmpty()
+
+    /**
      * 更新用户状态,要在子线程执行
      */
     fun updateState(type: Presence.Type): Boolean {
