@@ -66,7 +66,9 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
                     }
                 }, {
                     it.printStackTrace()
-                    XmppManage.getRM().reconnect()
+                    if (XmppUtils.isErrorCanReconnect(it)) {
+                        XmppManage.getRM().reconnect()
+                    }
                 })
     }
 

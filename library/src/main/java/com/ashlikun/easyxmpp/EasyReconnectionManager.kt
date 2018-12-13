@@ -80,14 +80,9 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         }
 
         override fun connectionClosedOnError(e: Exception) {
-            //是否在其他设备登录
-            if (XmppUtils.isLoginConflict(e)) {
-                return
+            if (XmppUtils.isErrorCanReconnect(e)) {
+                reconnect()
             }
-            if (!isAutomaticReconnectEnabled) {
-                return
-            }
-            reconnect()
         }
     }
     /**
@@ -250,9 +245,13 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
 
     /**
      * 重新连接
+     * 请判断异常后再调用
      */
     @Synchronized
     fun reconnect() {
+        if (!isAutomaticReconnectEnabled) {
+            return
+        }
         val connection = this.weakRefConnection.get()
         if (connection == null) {
             XmppUtils.loge("Connection is null, will not reconnect")

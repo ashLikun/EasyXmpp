@@ -7,6 +7,7 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
+import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.XMPPException
 import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.packet.StreamError
@@ -111,6 +112,21 @@ object XmppUtils {
             }
         }
         return false
+    }
+
+    /**
+     * 这个错误是否可以再次重新连接
+     * @return true:可以重写连接，请重新连接
+     */
+    fun isErrorCanReconnect(e: Throwable): Boolean {
+        if (e is SmackException.AlreadyConnectedException) {
+            //已经连接
+            return false
+        } else if (isLoginConflict(e)) {
+            //在其他设备上登录了
+            return false
+        }
+        return true
     }
 
 
