@@ -46,9 +46,10 @@ data class User(
     /**
      * 只有保存信息后才能在后续一些操作有效
      */
-    fun saveInfo(){
+    fun saveInfo() {
         XmppManage.getCM().userData = this
     }
+
     /**
      * 登录,请在失败的时候自己处理
      */

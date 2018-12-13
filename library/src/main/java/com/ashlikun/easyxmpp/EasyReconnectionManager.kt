@@ -152,8 +152,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                     connection.disconnect()
                 }
                 connection.connect()
-                //如果有登录信息去登录
-                XmppManage.getCM().userData?.neibuLogin()
                 disposable?.dispose()
             } else {
                 //没有网络继续走
