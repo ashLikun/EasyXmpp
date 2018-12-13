@@ -7,6 +7,7 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
+import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.XMPPException
 import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.packet.StreamError
@@ -103,7 +104,7 @@ object XmppUtils {
      * 是否这个错误是在其他设备上登录了
      * 统一账户同一resource才会有这个错误
      */
-    fun isLoginConflict(e: Exception): Boolean {
+    fun isLoginConflict(e: Throwable): Boolean {
         if (e is XMPPException.StreamErrorException) {
             //在其他设备上登录了
             if (StreamError.Condition.conflict == e.streamError?.condition) {
@@ -114,10 +115,24 @@ object XmppUtils {
     }
 
     /**
+     * 账号或者密码不正确
+     */
+    fun isUserError(e: Throwable): Boolean {
+        if (e is SmackException) {
+            if ("Received client random ASCII does not match client random ASCII" == e.message ||
+                    "Server random ASCII is shorter then client random ASCII" == e.message ||
+                    "Server random ASCII is null" == e.message) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
      * 是否是StreamErrorException表示流错误
      * 指定的错误
      */
-    fun isStreamError(e: Exception, condition: StreamError.Condition): Boolean {
+    fun isStreamError(e: Throwable, condition: StreamError.Condition): Boolean {
         if (e is XMPPException.StreamErrorException) {
             if (condition == e.streamError?.condition) {
                 return true
@@ -130,7 +145,7 @@ object XmppUtils {
      * 是否是XMPPErrorException 表示XMPP节点错误
      * 指定的错误
      */
-    fun isStanzaError(e: Exception, condition: StanzaError.Condition): Boolean {
+    fun isStanzaError(e: Throwable, condition: StanzaError.Condition): Boolean {
         if (e is XMPPException.XMPPErrorException) {
             if (condition == e.stanzaError?.condition) {
                 return true
