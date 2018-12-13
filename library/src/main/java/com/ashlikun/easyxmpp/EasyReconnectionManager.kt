@@ -263,8 +263,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             //延时时间间隔秒
             delayTime = timeDelay()
             isNetwork = XmppUtils.isNetworkConnected()
-            //执行任务
-            disposable = Observable.interval(delayTime.toLong(), 1, TimeUnit.SECONDS)
+            //执行任务,第一个先立马执行
+            Observable.just(delayTime.toLong())
                     .observeOn(Schedulers.newThread())
                     .subscribe(consumer, consumerError)
         }
