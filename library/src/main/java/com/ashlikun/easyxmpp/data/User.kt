@@ -27,6 +27,9 @@ data class User(
      * 获取xmpp user对象 String
      */
     fun getUser(): String {
+        if (userName.isEmpty()) {
+            return userName
+        }
         if (XmppManage.getCM().connection.user == null) {
             return userName
         }
