@@ -67,6 +67,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
         if (isConnectedIng) {
             return
         }
+        XmppManage.getRM().cancel()
         isConnectedIng = true
         Observable.just(1).observeOn(Schedulers.newThread())
                 .subscribe({
