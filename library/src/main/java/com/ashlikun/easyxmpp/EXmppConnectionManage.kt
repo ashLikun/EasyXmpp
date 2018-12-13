@@ -31,10 +31,15 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
 
     fun getUserName() = userData.getUser()
 
+
     init {
         connection.addConnectionListener(callbackListener)
     }
 
+    /**
+     * 是否正在连接服务器
+     */
+    var isConnectedIng = false
     /**
      * 是否登录
      *
@@ -59,13 +64,19 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      * 处理异常
      */
     fun connect() {
+        if (isConnectedIng) {
+            return
+        }
+        isConnectedIng = true
         Observable.just(1).observeOn(Schedulers.newThread())
                 .subscribe({
                     if (!connection.isConnected) {
                         connection.connect()
                     }
+                    isConnectedIng = false
                 }, {
                     it.printStackTrace()
+                    isConnectedIng = false
                     if (XmppUtils.isErrorCanReconnect(it)) {
                         XmppManage.getRM().reconnect()
                     }
