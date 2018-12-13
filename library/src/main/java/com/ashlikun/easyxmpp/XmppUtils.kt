@@ -7,7 +7,6 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.XMPPException
 import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.packet.StreamError
@@ -114,19 +113,6 @@ object XmppUtils {
         return false
     }
 
-    /**
-     * 账号或者密码不正确
-     */
-    fun isUserError(e: Throwable): Boolean {
-        if (e is SmackException) {
-            if ("Received client random ASCII does not match client random ASCII" == e.message ||
-                    "Server random ASCII is shorter then client random ASCII" == e.message ||
-                    "Server random ASCII is null" == e.message) {
-                return true
-            }
-        }
-        return false
-    }
 
     /**
      * 是否是StreamErrorException表示流错误

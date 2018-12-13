@@ -88,6 +88,23 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
     }
 
     /**
+     * 退出登录
+     */
+    fun logout() {
+        cleanLogin()
+        XmppManage.getCM().connection.instantShutdown()
+        //保证服务器连接不断开，只退出登录
+        XmppManage.getRM().reconnect()
+    }
+
+    /**
+     * 清空登录信息
+     */
+    fun cleanLogin() {
+        XmppManage.getCM().userData = User()
+    }
+
+    /**
      * 登录
      */
     fun login(bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
