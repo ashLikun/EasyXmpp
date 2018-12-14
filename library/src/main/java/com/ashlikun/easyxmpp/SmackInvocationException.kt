@@ -103,6 +103,7 @@ class SmackInvocationException constructor(throwable: Throwable?, detailMessage:
             var sasl = field?.get(XmppManage.getCM().connection) as SASLAuthentication?
             //反射调用init方法
             var method = sasl?.javaClass?.getDeclaredMethod("init")
+            method?.isAccessible = true
             method?.invoke(sasl)
         } catch (e: Exception) {
             e.printStackTrace()
