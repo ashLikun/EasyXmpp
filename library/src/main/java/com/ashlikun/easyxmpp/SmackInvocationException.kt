@@ -22,7 +22,13 @@ class SmackInvocationException constructor(throwable: Throwable?, detailMessage:
      * 是否是认证错误
      * 1:账号或者密码不正确
      */
-    fun isSASLError() = cause is SASLErrorException
+    fun isSASLError(): Boolean {
+        if (cause is SASLErrorException) {
+            cleanSASLError()
+            return true
+        }
+        return false
+    }
 
     /**
      * 是否没有连接服务器错误
