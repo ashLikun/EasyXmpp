@@ -7,10 +7,6 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import org.jivesoftware.smack.SmackException
-import org.jivesoftware.smack.XMPPException
-import org.jivesoftware.smack.packet.StanzaError
-import org.jivesoftware.smack.packet.StreamError
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -96,63 +92,8 @@ object XmppUtils {
 
     fun loge(msg: String) {
         if (XmppManage.get().config.isDebug) {
-            Log.e("EasyXmpp", msg)
+            Log.d("EasyXmpp", msg)
         }
     }
 
-    /**
-     * 是否这个错误是在其他设备上登录了
-     * 统一账户同一resource才会有这个错误
-     */
-    fun isLoginConflict(e: Throwable): Boolean {
-        if (e is XMPPException.StreamErrorException) {
-            //在其他设备上登录了
-            if (StreamError.Condition.conflict == e.streamError?.condition) {
-                return true
-            }
-        }
-        return false
-    }
-
-    /**
-     * 这个错误是否可以再次重新连接
-     * @return true:可以重写连接，请重新连接
-     */
-    fun isErrorCanReconnect(e: Throwable): Boolean {
-        if (e is SmackException.AlreadyConnectedException) {
-            //已经连接
-            return false
-        } else if (isLoginConflict(e)) {
-            //在其他设备上登录了
-            return false
-        }
-        return true
-    }
-
-
-    /**
-     * 是否是StreamErrorException表示流错误
-     * 指定的错误
-     */
-    fun isStreamError(e: Throwable, condition: StreamError.Condition): Boolean {
-        if (e is XMPPException.StreamErrorException) {
-            if (condition == e.streamError?.condition) {
-                return true
-            }
-        }
-        return false
-    }
-
-    /**
-     * 是否是XMPPErrorException 表示XMPP节点错误
-     * 指定的错误
-     */
-    fun isStanzaError(e: Throwable, condition: StanzaError.Condition): Boolean {
-        if (e is XMPPException.XMPPErrorException) {
-            if (condition == e.stanzaError?.condition) {
-                return true
-            }
-        }
-        return false
-    }
 }

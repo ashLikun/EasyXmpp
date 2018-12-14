@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import com.ashlikun.easyxmpp.SmackInvocationException
 import com.ashlikun.easyxmpp.XmppConfig
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
@@ -100,7 +101,7 @@ class MainActivity : Activity() {
 
             }
 
-            override fun connectionError(isClose: Boolean, connection: Exception) {
+            override fun connectionError(isClose: Boolean, connection: SmackInvocationException) {
 
             }
 

@@ -13,23 +13,29 @@ import org.jivesoftware.smack.XMPPConnection
  * 功能介绍：提供给外部监听,对应连接的状态
  * 基于[ConnectionListener]
  */
-interface ConnectionCallback {
+open class SimpleConnectionCallback : ConnectionCallback {
     /**
      * 连接成功
      */
-    fun connected(connection: XMPPConnection)
+    override fun connected(connection: XMPPConnection) {
+
+    }
 
     /**
      * 连接中断
      *@param isClose 是否是关闭连接
      * @param connection
      */
-    fun connectionError(isClose: Boolean, connection: SmackInvocationException)
+    override fun connectionError(isClose: Boolean, connection: SmackInvocationException) {
+
+    }
 
     /**
      * 登录成功
      * @param resumed 是否是恢复的xmpp，true是
      */
-    fun authenticated(connection: XMPPConnection, resumed: Boolean)
+    override fun authenticated(connection: XMPPConnection, resumed: Boolean) {
+
+    }
 
 }

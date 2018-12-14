@@ -1,5 +1,6 @@
 package com.ashlikun.easyxmpp.listener
 
+import com.ashlikun.easyxmpp.SmackInvocationException
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import org.jivesoftware.smack.AbstractConnectionListener
@@ -16,8 +17,6 @@ import java.util.*
  */
 class ExConnectionListener : AbstractConnectionListener() {
     var callbackList: MutableList<ConnectionCallback> = ArrayList()
-
-
     /**
      * 添加连接监听
      *
@@ -78,7 +77,7 @@ class ExConnectionListener : AbstractConnectionListener() {
         XmppUtils.loge("connectionClosed")
         XmppUtils.runMain {
             for (callback in callbackList) {
-                callback.connectionError(true, Exception("connection is closed"))
+                callback.connectionError(true, SmackInvocationException("connection is closed"))
             }
         }
 
@@ -94,7 +93,7 @@ class ExConnectionListener : AbstractConnectionListener() {
         XmppUtils.loge("connectionClosedOnError" + e.toString())
         XmppUtils.runMain {
             for (callback in callbackList) {
-                callback.connectionError(false, e)
+                callback.connectionError(false, SmackInvocationException(e))
             }
         }
     }

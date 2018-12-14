@@ -80,7 +80,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         }
 
         override fun connectionClosedOnError(e: Exception) {
-            if (XmppUtils.isErrorCanReconnect(e)) {
+            var e2 = SmackInvocationException(e)
+            if (e2.isErrorCanReconnect()) {
                 reconnect()
             }
         }

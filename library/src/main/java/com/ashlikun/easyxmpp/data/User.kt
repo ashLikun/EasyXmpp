@@ -1,5 +1,6 @@
 package com.ashlikun.easyxmpp.data
 
+import com.ashlikun.easyxmpp.SmackInvocationException
 import com.ashlikun.easyxmpp.XmppManage
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -56,7 +57,7 @@ data class User(
     /**
      * 登录,请在失败的时候自己处理
      */
-    fun login(bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
+    fun login(bolock: (user: User, isSuccess: Boolean, throwable: SmackInvocationException?) -> Unit) {
         Observable.just(1).map {
             saveInfo()
             XmppManage.getCM().connection.login(userName, password)
@@ -68,11 +69,11 @@ data class User(
                     if (it) {
                         bolock(this, it, null)
                     } else {
-                        bolock(this, it, Exception("isAuthenticated == false"))
+                        bolock(this, it, SmackInvocationException("isAuthenticated == false"))
                     }
                 }, { throwable ->
                     //登录失败，回调
-                    bolock(this, false, throwable)
+                    bolock(this, false, SmackInvocationException(throwable))
                 })
     }
 

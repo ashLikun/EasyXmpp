@@ -71,14 +71,18 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
         isConnectedIng = true
         Observable.just(1).observeOn(Schedulers.newThread())
                 .subscribe({
-                    if (!connection.isConnected) {
-                        connection.connect()
+                    try {
+                        if (!connection.isConnected) {
+                            connection.connect()
+                        }
+                    } catch (e: Exception) {
+                        throw SmackInvocationException(e)
                     }
                     isConnectedIng = false
                 }, {
                     it.printStackTrace()
                     isConnectedIng = false
-                    if (XmppUtils.isErrorCanReconnect(it)) {
+                    if (it is SmackInvocationException && it.isErrorCanReconnect()) {
                         XmppManage.getRM().reconnect()
                     }
                 })
@@ -121,7 +125,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
     /**
      * 登录
      */
-    fun login(bolock: (user: User, isSuccess: Boolean, throwable: Throwable?) -> Unit) {
+    fun login(bolock: (user: User, isSuccess: Boolean, throwable: SmackInvocationException?) -> Unit) {
         userData.login(bolock)
     }
 
