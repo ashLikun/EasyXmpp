@@ -6,6 +6,7 @@ import org.jivesoftware.smack.XMPPException
 import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.packet.StreamError
 import org.jivesoftware.smack.sasl.SASLErrorException
+import java.lang.reflect.Field
 
 
 /**
@@ -97,13 +98,36 @@ class SmackInvocationException constructor(throwable: Throwable?, detailMessage:
     fun cleanSASLError() {
         try {
             //反射获取saslAuthentication字段
-            var field = XmppManage.getCM().connection.javaClass.getField("saslAuthentication")
-            var sasl = field.get(XmppManage.getCM().connection) as SASLAuthentication
+
+            var field = getDeclaredField(XmppManage.getCM().connection.javaClass, "saslAuthentication")
+            field?.isAccessible = true
+            var sasl = field?.get(XmppManage.getCM().connection) as SASLAuthentication?
             //反射调用init方法
-            var method = sasl.javaClass.getMethod("init")
-            method.invoke(sasl)
+            var method = sasl?.javaClass?.getDeclaredMethod("init")
+            method?.invoke(sasl)
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    /**
+     * 循环向上转型, 获取对象的 DeclaredField
+     *
+     * @param fieldName : 父类中的属性名
+     * @return 父类中的属性对象
+     */
+    fun getDeclaredField(cls: Class<*>, fieldName: String): Field? {
+        var field: Field? = null
+        var clazz = cls
+        while (clazz != Any::class.java) {
+            try {
+                field = clazz.getDeclaredField(fieldName)
+                return field
+            } catch (e: Exception) {
+            }
+
+            clazz = clazz.superclass
+        }
+        return null
     }
 }
