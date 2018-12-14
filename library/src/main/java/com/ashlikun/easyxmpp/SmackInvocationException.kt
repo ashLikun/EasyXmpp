@@ -98,7 +98,6 @@ class SmackInvocationException constructor(throwable: Throwable?, detailMessage:
     fun cleanSASLError() {
         try {
             //反射获取saslAuthentication字段
-
             var field = getDeclaredField(XmppManage.getCM().connection.javaClass, "saslAuthentication")
             field?.isAccessible = true
             var sasl = field?.get(XmppManage.getCM().connection) as SASLAuthentication?
