@@ -102,6 +102,7 @@ class EasyChat constructor(var friendUsername: String) {
 
     /**
      * 查询当前用户对应的所有消息
+     * dataTime->降序排序 新数据在第0个
      */
     fun findMessage(callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
@@ -109,7 +110,7 @@ class EasyChat constructor(var friendUsername: String) {
                 LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
                         .where("meUsername = ?", getUserName())
                         .whereAnd("friendUsername = ?", friendUsername)
-                        .orderBy("dataTime"))
+                        .appendOrderDescBy("dataTime"))
             } catch (e: Exception) {
                 null
             })
@@ -124,6 +125,7 @@ class EasyChat constructor(var friendUsername: String) {
      * 查询当前用户对应的所有消息,加上分页
      * @param start 开始的行数
      * @param pageSize 查询多少条数据
+     * dataTime->降序排序 新数据在第0个
      */
     fun findMessage(start: Int, pageSize: Int, callback: (List<ChatMessage>?) -> Unit) {
         Observable.create<List<ChatMessage>?> {
@@ -131,7 +133,7 @@ class EasyChat constructor(var friendUsername: String) {
                 LiteOrmUtil.get().query(QueryBuilder(ChatMessage::class.java)
                         .where("meUsername = ?", getUserName())
                         .whereAnd("friendUsername = ?", friendUsername)
-                        .orderBy("dataTime").limit(start, pageSize))
+                        .appendOrderDescBy("dataTime").limit(start, pageSize))
             } catch (e: Exception) {
                 null
             })
