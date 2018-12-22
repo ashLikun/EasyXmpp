@@ -15,7 +15,6 @@ import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.chat2.Chat
 import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smackx.delay.DelayInformationManager
-import org.json.JSONObject
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.stringprep.XmppStringprepException
 import java.util.*
@@ -42,10 +41,6 @@ data class ChatMessage(
          */
         @MessageStatus.Code
         var messageStatus: Int,
-        /**
-         * 消息类型,[content]里面解析的type
-         */
-        var messageType: String?,
         /**
          * 消息内容
          * 这是个json
@@ -182,27 +177,12 @@ data class ChatMessage(
 
 
     companion object {
-        const val MESSAGE_TYPE = "type"
-
-        /**
-         * 获取这个消息的json里面的type
-         */
-        fun getMessageType(content: String): String? {
-            return try {
-                var jsonObject = JSONObject(content)
-                jsonObject.getString(MESSAGE_TYPE)
-            } catch (e: Exception) {
-                null
-            }
-        }
-
         /**
          * 构建一个我发出的消息
          */
         fun getMySendMessage(message: Message): ChatMessage {
             return ChatMessage(message.stanzaId,
                     MessageStatus.SENDING,
-                    getMessageType(message.body),
                     message.body,
                     "",
                     message.to?.localpartOrNull?.toString(),
@@ -220,7 +200,6 @@ data class ChatMessage(
             var date = DelayInformationManager.getDelayTimestamp(message)
             return ChatMessage(message.stanzaId,
                     MessageStatus.SUCCESS,
-                    getMessageType(message.body),
                     message.body,
                     "",
                     message.from?.localpartOrNull?.toString(),
