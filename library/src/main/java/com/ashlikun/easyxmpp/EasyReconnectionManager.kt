@@ -170,7 +170,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private val consumerError = Consumer<Throwable> { t ->
         // SmackException.AlreadyLoggedInException已经登录了,重连结束
-        if (t !is SmackException.AlreadyLoggedInException) {
+        var exception = SmackInvocationException(t)
+        if (!exception.isLoginConflict()) {
             if (XmppManage.get().config.isDebug) {
                 XmppUtils.loge(t.toString())
             }
