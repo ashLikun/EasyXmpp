@@ -231,7 +231,6 @@ class XmppConfig {
                 } catch (e: XmppStringprepException) {
                     e.printStackTrace()
                 }
-
                 //设置主机地址
                 builder.setHost(config.host)
                 //设置端口号

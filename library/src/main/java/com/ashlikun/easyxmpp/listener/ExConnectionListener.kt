@@ -1,12 +1,12 @@
 package com.ashlikun.easyxmpp.listener
 
-import android.util.Log
 import com.ashlikun.easyxmpp.SmackInvocationException
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import org.jivesoftware.smack.AbstractConnectionListener
+import org.jivesoftware.smack.StanzaListener
 import org.jivesoftware.smack.XMPPConnection
-import org.jivesoftware.smack.packet.Presence
+import org.jivesoftware.smack.filter.PresenceTypeFilter
 import java.util.*
 
 /**
@@ -38,9 +38,22 @@ class ExConnectionListener : AbstractConnectionListener() {
     override fun connected(connection: XMPPConnection) {
         super.connected(connection)
         XmppUtils.loge("连接成功")
+
         for (callback in callbackList) {
             callback.connected(connection)
         }
+    }
+
+    /**
+     * 离线监听服务器叫我离线的事件,实现永不离线
+     */
+    private val offlineListener = StanzaListener {
+        //离线了,重新上线
+        XmppUtils.loge("当前用户离线了" + it.toString())
+        //拉取离线消息
+        offlineMessage()
+        //设置状态在线
+        XmppManage.getCM().userData.updateStateToAvailable()
     }
 
     /**
@@ -54,14 +67,8 @@ class ExConnectionListener : AbstractConnectionListener() {
         XmppUtils.loge("authenticated$resumed")
         //如果没有设置登录状态
         if (!XmppManage.get().config.sendPresence && !resumed) {
-            XmppUtils.runNew {
-                XmppManage.getRM().isReconnectUnavailable = false
-                //设置离线状态
-                XmppManage.getCM().userData.updateState(Presence.Type.unavailable)
-                offlineMessage()
-                //设置状态在线
-                XmppManage.getCM().userData.updateState(Presence.Type.available)
-            }
+            connection.removeStanzaSendingListener(offlineListener)
+            connection.addStanzaSendingListener(offlineListener, PresenceTypeFilter.UNAVAILABLE)
         }
         XmppUtils.runMain {
             for (callback in callbackList) {
@@ -75,10 +82,11 @@ class ExConnectionListener : AbstractConnectionListener() {
         var size = XmppManage.getOM().messageCount
         XmppUtils.loge("离线消息一共$size")
         if (size > 0) {
-            XmppManage.getOM().messages.forEach {
-                XmppUtils.loge("离线消息-->$it.body")
-            }
+            XmppManage.getOM().messages
         }
+        XmppManage.getChatM().messageListener.cleanOfflineDeleteMessage()
+        //通知服务器删除离线消息
+        XmppManage.getOM().deleteMessages()
     }
 
     /**

@@ -96,6 +96,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             reconnect()
         } else {
             isReconnectUnavailable = true
+            //更新为上线
+            XmppManage.getCM().userData.updateStateToAvailable()
             val connection = weakRefConnection.get()
             if (connection != null) {
                 XmppUtils.runNew { PingManager.getInstanceFor(connection).pingServerIfNecessary() }

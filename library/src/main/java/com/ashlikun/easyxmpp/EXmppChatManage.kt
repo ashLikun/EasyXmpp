@@ -31,7 +31,7 @@ class EXmppChatManage internal constructor(connection: XMPPTCPConnection) {
      */
     private val chatManager: ChatManager = ChatManager.getInstanceFor(connection)
 
-    private var messageListener = ExMessageListener(connection, chatManager)
+    internal var messageListener = ExMessageListener(connection, chatManager)
 
 
     fun getChatM(): ChatManager = chatManager

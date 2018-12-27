@@ -37,6 +37,11 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
      * 是否删除过这个用户的离线消息
      */
     private val isOfflineDeleteMessage = HashMap<String, Boolean>()
+
+    fun cleanOfflineDeleteMessage() {
+        isOfflineDeleteMessage.clear()
+    }
+
     /**
      * 这2个是切换主线程的回调
      */
