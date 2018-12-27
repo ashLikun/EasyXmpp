@@ -44,17 +44,6 @@ class ExConnectionListener : AbstractConnectionListener() {
         }
     }
 
-    /**
-     * 离线监听服务器叫我离线的事件,实现永不离线
-     */
-    private val offlineListener = StanzaListener {
-        //离线了,重新上线
-        XmppUtils.loge("当前用户离线了" + it.toString())
-        //拉取离线消息
-        offlineMessage()
-        //设置状态在线
-        XmppManage.getCM().userData.updateStateToAvailable()
-    }
 
     /**
      * 登录成功,处理离线消息
@@ -67,8 +56,10 @@ class ExConnectionListener : AbstractConnectionListener() {
         XmppUtils.loge("authenticated$resumed")
         //如果没有设置登录状态
         if (!XmppManage.get().config.sendPresence && !resumed) {
-            connection.removeStanzaSendingListener(offlineListener)
-            connection.addStanzaSendingListener(offlineListener, PresenceTypeFilter.UNAVAILABLE)
+            //拉取离线消息
+            offlineMessage()
+            //设置状态在线
+            XmppManage.getCM().userData.updateStateToAvailable()
         }
         XmppUtils.runMain {
             for (callback in callbackList) {
