@@ -53,6 +53,11 @@ class XmppConfig {
     var securityMode: ConnectionConfiguration.SecurityMode = ConnectionConfiguration.SecurityMode.disabled
         internal set
     /**
+     * 消息回执类型
+     */
+    var receipt: DeliveryReceiptManager.AutoReceiptMode = DeliveryReceiptManager.AutoReceiptMode.disabled
+        internal set
+    /**
      * 是否开启压缩
      */
     var compressionEnabled = true
@@ -250,7 +255,7 @@ class XmppConfig {
                 EasyReconnectionManager.setDefaultFixedDelay(config.reconnectionTime)
                 EasyReconnectionManager.setDefaultReconnectionPolicy(EasyReconnectionManager.ReconnectionPolicy.FIXED_DELAY)
                 //消息回执
-                DeliveryReceiptManager.setDefaultAutoReceiptMode(DeliveryReceiptManager.AutoReceiptMode.always)
+                DeliveryReceiptManager.setDefaultAutoReceiptMode(config.receipt)
                 //心跳包间隔
                 PingManager.setDefaultPingInterval(config.pingInterval / 1000)
                 XmppManage.get().init(builder.build(), config)

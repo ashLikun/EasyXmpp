@@ -64,7 +64,7 @@ class MainActivity : Activity() {
 
     private fun sendMessage() {
         handler.postDelayed(Runnable {
-            easyChat.sendMessage("我是李坤,这是第几条$count")
+            easyChat.sendMessage("{\"content\":\"我是李坤$count\",\"type\":\"1\"}")
             count++
             if (count >= 10000) {
                 return@Runnable
@@ -94,6 +94,7 @@ class MainActivity : Activity() {
         XmppConfig.Builder.create(application)
                 .host("xmpp.o6o6o.com")
                 .isDebug(true)
+                .sendPresence(false)
                 .apply()
         XmppManage.getCM().connect()
         XmppManage.getCM().addCallback(object : ConnectionCallback {
@@ -122,7 +123,7 @@ class MainActivity : Activity() {
                 }
             }
         })
-        easyChat = EasyChat("zhaoyang")
+        easyChat = EasyChat("likun2")
         easyChat.addReceiveListener(object : ReceiveMessageListener {
             override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage, chat: Chat) {
                 dbMessage?.run {

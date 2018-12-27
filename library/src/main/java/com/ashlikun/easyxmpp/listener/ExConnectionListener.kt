@@ -1,5 +1,6 @@
 package com.ashlikun.easyxmpp.listener
 
+import android.util.Log
 import com.ashlikun.easyxmpp.SmackInvocationException
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
@@ -57,6 +58,7 @@ class ExConnectionListener : AbstractConnectionListener() {
                 XmppManage.getRM().isReconnectUnavailable = false
                 //设置离线状态
                 XmppManage.getCM().userData.updateState(Presence.Type.unavailable)
+                offlineMessage()
                 //设置状态在线
                 XmppManage.getCM().userData.updateState(Presence.Type.available)
             }
@@ -67,6 +69,16 @@ class ExConnectionListener : AbstractConnectionListener() {
             }
         }
 
+    }
+
+    private fun offlineMessage() {
+        var size = XmppManage.getOM().messageCount
+        XmppUtils.loge("离线消息一共$size")
+        if (size > 0) {
+            XmppManage.getOM().messages.forEach {
+                XmppUtils.loge("离线消息-->$it.body")
+            }
+        }
     }
 
     /**
