@@ -4,9 +4,7 @@ import com.ashlikun.easyxmpp.SmackInvocationException
 import com.ashlikun.easyxmpp.XmppManage
 import com.ashlikun.easyxmpp.XmppUtils
 import org.jivesoftware.smack.AbstractConnectionListener
-import org.jivesoftware.smack.StanzaListener
 import org.jivesoftware.smack.XMPPConnection
-import org.jivesoftware.smack.filter.PresenceTypeFilter
 import java.util.*
 
 /**
