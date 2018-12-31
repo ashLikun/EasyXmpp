@@ -83,7 +83,7 @@ data class ChatMessage(
         return if (date() == null || tt.date() == null) {
             Long.MAX_VALUE
         } else {
-            date()!!.time - tt.date()!!.time
+            dataTime - tt.dataTime
         }
     }
 
