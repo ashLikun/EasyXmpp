@@ -63,7 +63,7 @@ data class ChatMessage(
         /**
          * 消息发送接收的时间
          */
-        var dataTime: String?,
+        var dataTime: Long = 0,
         /**
          * 当前消息是否自己发出的
          */
@@ -74,7 +74,7 @@ data class ChatMessage(
         var isRead: Boolean
 ) {
 
-    fun date(): Date? = XmppUtils.parseDatetime(dataTime ?: "")
+    fun date(): Date? = Date(dataTime)
 
     /**
      * 计算与另一个message的时间间隔ms
@@ -187,7 +187,7 @@ data class ChatMessage(
                     "",
                     message.to?.localpartOrNull?.toString(),
                     XmppManage.getCM().getUserName(),
-                    XmppUtils.formatDatetime(Date()),
+                    Date().time,
                     true, false
             )
         }
@@ -204,7 +204,7 @@ data class ChatMessage(
                     "",
                     message.from?.localpartOrNull?.toString(),
                     XmppManage.getCM().getUserName(),
-                    XmppUtils.formatDatetime(date ?: Date()),
+                    (date ?: Date()).time,
                     false, false
             )
         }

@@ -7,8 +7,6 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * 作者　　: 李坤
@@ -19,9 +17,6 @@ import java.util.*
  * 功能介绍：
  */
 object XmppUtils {
-    private val datetimeFormat = SimpleDateFormat(
-            "yyyy-MM-dd HH:mm:ss")
-
     /**
      * 是否有网络连接
      */
@@ -75,20 +70,6 @@ object XmppUtils {
         return "$name@${XmppManage.get().getDomain()}"
     }
 
-    /**
-     * 格式化日期时间
-     * 日期时间格式yyyy-MM-dd HH:mm:ss
-     */
-    fun formatDatetime(date: Date) = datetimeFormat.format(date)
-
-    /**
-     * 吧字符串转换成时间
-     */
-    fun parseDatetime(date: String) = try {
-        datetimeFormat.parse(date)
-    } catch (e: Exception) {
-        null
-    }
 
     fun loge(msg: String) {
         if (XmppManage.get().config.isDebug) {
