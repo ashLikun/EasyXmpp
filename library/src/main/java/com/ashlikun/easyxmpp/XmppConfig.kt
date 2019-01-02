@@ -3,6 +3,7 @@ package com.ashlikun.easyxmpp
 import android.app.Application
 import android.text.TextUtils
 import org.jivesoftware.smack.ConnectionConfiguration
+import org.jivesoftware.smack.XMPPConnection
 import org.jivesoftware.smack.roster.Roster
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jivesoftware.smackx.ping.PingManager
@@ -82,6 +83,11 @@ class XmppConfig {
      * 设置答复超时
      */
     var replyTimeout = 5000
+        internal set
+    /**
+     * 定义如何处理传出节的from属性。默认由服务端指定
+     */
+    var fromMode: XMPPConnection.FromMode? = null
         internal set
     /**
      * 重新连接时间间隔
@@ -195,6 +201,14 @@ class XmppConfig {
          */
         fun replyTimeout(replyTimeout: Int): Builder {
             config.replyTimeout = replyTimeout
+            return this
+        }
+
+        /**
+         * 设置答复超时
+         */
+        fun fromMode(fromMode: XMPPConnection.FromMode): Builder {
+            config.fromMode = fromMode
             return this
         }
 

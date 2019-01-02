@@ -95,7 +95,10 @@ class XmppManage private constructor() {
         val connection = XMPPTCPConnection(configuration)
         //设置答复超时
         connection.replyTimeout = config.replyTimeout.toLong()
-
+        //定义如何处理传出节的from属性。
+        if(config.fromMode != null) {
+            connection.fromMode = config.fromMode
+        }
         //几个管理器封装
         connectionManage = EXmppConnectionManage(connection)
         offlineMessageManager = OfflineMessageManager(connection)
