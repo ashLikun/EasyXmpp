@@ -23,7 +23,9 @@ import java.util.concurrent.CopyOnWriteArraySet
  * 功能介绍：与用户聊天的对象封装
  * @param friendUsername 聊天好友的用户名,群聊时为群聊的jid
  */
-class EasyChat constructor(var friendUsername: String) {
+class EasyChat constructor(var friendUsername: String) : ReceiveMessageListener, SendMessageListener {
+
+
     /**
      * xmpp的聊天对象
      */
@@ -37,24 +39,24 @@ class EasyChat constructor(var friendUsername: String) {
     init {
         chat = XmppManage.getChatM().getChat(friendUsername)
         //添加消息监听
-        XmppManage.getChatM().addReceiveListener(object : ReceiveMessageListener {
-            override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage, messageChat: Chat) {
-                if (messageChat == chat) {
-                    receiveListeners.forEach {
-                        it.onReceiveMessage(from, message, dbMessage, messageChat)
-                    }
-                }
+        XmppManage.getChatM().addReceiveListener(this)
+        XmppManage.getChatM().addSendListener(this)
+    }
+
+    override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage, messageChat: Chat) {
+        if (messageChat == chat) {
+            receiveListeners.forEach {
+                it.onReceiveMessage(from, message, dbMessage, messageChat)
             }
-        })
-        XmppManage.getChatM().addSendListener(object : SendMessageListener {
-            override fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage, messageChat: Chat) {
-                if (messageChat == chat) {
-                    sendListeners.forEach {
-                        it.onSendMessage(to, message, dbMessage, messageChat)
-                    }
-                }
+        }
+    }
+
+    override fun onSendMessage(to: EntityBareJid, message: Message, dbMessage: ChatMessage, messageChat: Chat) {
+        if (messageChat == chat) {
+            sendListeners.forEach {
+                it.onSendMessage(to, message, dbMessage, messageChat)
             }
-        })
+        }
     }
 
     fun getUserName(): String = XmppManage.getCM().getUserName()
@@ -188,5 +190,13 @@ class EasyChat constructor(var friendUsername: String) {
         if (sendListeners.contains(listener)) {
             sendListeners.remove(listener)
         }
+    }
+
+    /**
+     * 销毁的时候一定要调用这个方法，防止内存泄漏
+     */
+    fun onDestroy() {
+        XmppManage.getChatM().removeReceiveListener(this)
+        XmppManage.getChatM().removeSendListener(this)
     }
 }
