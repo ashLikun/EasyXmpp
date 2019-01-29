@@ -9,6 +9,7 @@ import org.jivesoftware.smack.SmackException
 import org.jivesoftware.smack.XMPPException
 import org.jivesoftware.smack.packet.Presence
 import java.io.IOException
+import java.io.Serializable
 
 
 /**
@@ -22,7 +23,7 @@ data class User(
          * 用户名与密码
          */
         var userName: String = "",
-        var password: String = "") {
+        var password: String = "") : Serializable {
 
     /**
      * 获取xmpp user对象 String

@@ -17,6 +17,7 @@ import org.jivesoftware.smack.packet.Message
 import org.jivesoftware.smackx.delay.DelayInformationManager
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.stringprep.XmppStringprepException
+import java.io.Serializable
 import java.util.*
 
 /**
@@ -72,7 +73,7 @@ data class ChatMessage(
          * 是否读取
          */
         var isRead: Boolean
-) {
+) : Serializable {
 
     fun date(): Date? = Date(dataTime)
 
