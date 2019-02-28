@@ -116,6 +116,9 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
      */
     override fun newIncomingMessage(from: EntityBareJid, message: Message, chat: Chat) {
         //如果本地已经有了就过滤,因为这里的id可能是对方生成的，所以这里加上多个条件判断重复
+        if (message.stanzaId.isNullOrBlank()) {
+            return
+        }
         handleNewMessage(from, message, chat)
     }
 
