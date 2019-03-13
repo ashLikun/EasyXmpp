@@ -7,6 +7,8 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
+import org.jxmpp.jid.Jid
+import org.jxmpp.jid.impl.JidCreate
 
 /**
  * 作者　　: 李坤
@@ -75,6 +77,11 @@ object XmppUtils {
         if (XmppManage.get().config.isDebug) {
             Log.d("EasyXmpp", msg)
         }
+    }
+
+    fun getFrom(): Jid? {
+        return XmppManage.getCM().connection?.user?.asEntityBareJid()
+                ?: JidCreate.from(XmppManage.getCM().connection.configuration?.username?.toString() + "@" + XmppManage.getCM().connection.configuration.xmppServiceDomain.toString())
     }
 
 

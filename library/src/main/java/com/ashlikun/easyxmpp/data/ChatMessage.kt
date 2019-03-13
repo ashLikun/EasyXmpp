@@ -135,6 +135,7 @@ data class ChatMessage(
         return if (!XmppManage.isConnected() || !XmppManage.isAuthenticated() || chat == null) -1 else
             try {
                 var message = getMessage()
+                message.from = XmppUtils.getFrom()
                 if (message.to == null) {
                     message.to = chat?.xmppAddressOfChatPartner
                 }
