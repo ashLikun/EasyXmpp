@@ -135,7 +135,6 @@ data class ChatMessage(
         return if (!XmppManage.isConnected() || !XmppManage.isAuthenticated() || chat == null) -1 else
             try {
                 var message = getMessage()
-                message.from = XmppUtils.getFrom()
                 if (message.to == null) {
                     message.to = chat?.xmppAddressOfChatPartner
                 }
@@ -199,6 +198,12 @@ data class ChatMessage(
          * 构建一个我收到的消息
          */
         fun getMyAcceptMessage(message: Message): ChatMessage {
+            if (message.from?.localpartOrNull?.toString() == message.to?.localpartOrNull?.toString() && message.getSubject("oneself") != null) {
+                //如果是同账号发送过来的就认为是自己发送消息
+                //并且把消息的to指向subject里面变量
+                message.to = JidCreate.from(message.getSubject("oneself"))
+                return getMySendMessage(message)
+            }
             //如果date不为null就代表是离线消息，时间得用离线消息时间
             var date = DelayInformationManager.getDelayTimestamp(message)
             return ChatMessage(message.stanzaId,
