@@ -6,7 +6,6 @@ import com.ashlikun.easyxmpp.status.MessageStatus
 import com.ashlikun.orm.LiteOrmUtil
 import com.ashlikun.orm.db.annotation.PrimaryKey
 import com.ashlikun.orm.db.annotation.Table
-import com.ashlikun.orm.db.assit.QueryBuilder
 import com.ashlikun.orm.db.assit.WhereBuilder
 import com.ashlikun.orm.db.enums.AssignType
 import com.ashlikun.orm.db.model.ColumnsValue
@@ -275,12 +274,9 @@ data class ChatMessage(
         /**
          * 查找是否有这条消息,接收的消息
          */
-        fun havaAcceptMessage(message: Message): Boolean {
+        fun havaMessage(message: Message): Boolean {
             return try {
-                LiteOrmUtil.get().queryCount(QueryBuilder(ChatMessage::class.java)
-                        .where("messageId = ?", message.stanzaId)
-                        .whereAnd("content = ?", message.body)
-                        .whereAnd("meUsername = ?", XmppManage.getCM().getUserName())) > 0
+                LiteOrmUtil.get().queryById(message.stanzaId, ChatMessage::class.java) != null
             } catch (e: Exception) {
                 false
             }
