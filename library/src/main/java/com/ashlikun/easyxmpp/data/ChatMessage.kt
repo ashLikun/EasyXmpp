@@ -202,7 +202,9 @@ data class ChatMessage(
                 //如果是同账号发送过来的就认为是自己发送消息
                 //并且把消息的to指向subject里面变量
                 message.to = JidCreate.from(message.getSubject("oneself"))
-                return getMySendMessage(message)
+                var res = getMySendMessage(message)
+                res.messageStatus = MessageStatus.SUCCESS
+                return res
             }
             //如果date不为null就代表是离线消息，时间得用离线消息时间
             var date = DelayInformationManager.getDelayTimestamp(message)
