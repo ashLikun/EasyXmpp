@@ -145,7 +145,8 @@ data class ChatMessage(
                 //先保存数据库,在发送回调的时候再改变状态
                 messageStatus = MessageStatus.SENDING
                 if (save()) {
-                    chat?.send(message)
+                    XmppManage.getCM().sendStanza(message) {
+                    }
                     1
                 } else {
                     -1

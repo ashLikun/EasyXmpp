@@ -1,5 +1,6 @@
 package com.ashlikun.easyxmpp
 
+import org.jivesoftware.smack.packet.Stanza
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jivesoftware.smackx.offline.OfflineMessageManager
@@ -96,7 +97,7 @@ class XmppManage private constructor() {
         //设置答复超时
         connection.replyTimeout = config.replyTimeout.toLong()
         //定义如何处理传出节的from属性。
-        if(config.fromMode != null) {
+        if (config.fromMode != null) {
             connection.fromMode = config.fromMode
         }
         //几个管理器封装
