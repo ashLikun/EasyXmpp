@@ -129,7 +129,7 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
     private fun handleNewMessage(from: EntityBareJid, message: Message, chat: Chat) {
         if (!ChatMessage.havaAcceptMessage(message)) {
             //如果本地有这个消息id了，那么从新生成
-            if () {
+            if (ChatMessage.havaMessage(message.stanzaId)) {
                 message.stanzaId = StanzaIdUtil.newStanzaId()
             }
             //保存消息到本地

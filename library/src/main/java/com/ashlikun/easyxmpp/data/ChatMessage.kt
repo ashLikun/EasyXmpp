@@ -280,7 +280,8 @@ data class ChatMessage(
                 LiteOrmUtil.get().queryCount(QueryBuilder(ChatMessage::class.java)
                         .where("messageId = ?", message.stanzaId)
                         .whereAnd("friendUsername = ?", message.from?.localpartOrNull?.toString())
-                        .whereAnd("isMeSend = ?", false)) > 0
+                        .whereAnd("content = ?", message.body)
+                        .whereAnd("meUsername = ?", XmppManage.getCM().getUserName())) > 0
             } catch (e: Exception) {
                 false
             }
