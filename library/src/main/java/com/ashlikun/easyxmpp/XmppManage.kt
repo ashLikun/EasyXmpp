@@ -1,6 +1,5 @@
 package com.ashlikun.easyxmpp
 
-import org.jivesoftware.smack.packet.Stanza
 import org.jivesoftware.smack.tcp.XMPPTCPConnection
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jivesoftware.smackx.offline.OfflineMessageManager
