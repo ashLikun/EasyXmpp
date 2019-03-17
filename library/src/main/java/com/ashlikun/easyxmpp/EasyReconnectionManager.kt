@@ -146,10 +146,9 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             }
             if (currentNetwork) {
                 val connection = weakRefConnection.get() ?: return@Consumer
-                if (connection.isConnected) {
-                    connection.disconnect()
+                if (!connection.isConnected) {
+                    connection.connect()
                 }
-                connection.connect()
                 disposable?.dispose()
             } else {
                 //没有网络继续走
@@ -259,6 +258,9 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         val connection = this.weakRefConnection.get()
         if (connection == null) {
             XmppUtils.loge("Connection is null, will not reconnect")
+            return
+        }
+        if (connection.isConnected) {
             return
         }
         //是否正在运行重连  isDisposed = true 就是结束了

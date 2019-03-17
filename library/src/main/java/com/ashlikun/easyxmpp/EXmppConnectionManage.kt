@@ -110,7 +110,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      */
     fun logout() {
         cleanLogin()
-        XmppManage.getCM().connection.instantShutdown()
+        XmppManage.getCM().connection.disconnect()
         //保证服务器连接不断开，只退出登录
         XmppManage.getRM().reconnect()
     }
