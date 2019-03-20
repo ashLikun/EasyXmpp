@@ -119,7 +119,7 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
      * 清空登录信息
      */
     fun cleanLogin() {
-        XmppManage.getCM().userData = User()
+        User().login { user, isSuccess, throwable -> }
     }
 
     /**

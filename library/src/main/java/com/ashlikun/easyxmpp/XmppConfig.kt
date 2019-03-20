@@ -261,6 +261,7 @@ class XmppConfig {
                 if (config.isDebug) {
                     builder.enableDefaultDebugger()
                 }
+                builder.allowEmptyOrNullUsernames()
                 //需要经过同意才可以添加好友 manual 添加直接通过accept_all
                 Roster.setDefaultSubscriptionMode(config.subscriptionMode)
                 //重新连接机制

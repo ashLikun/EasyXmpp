@@ -149,6 +149,9 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                 if (!connection.isConnected) {
                     connection.connect()
                 }
+                if (XmppManage.getCM().userData.isValid()) {
+                    connection.login()
+                }
                 disposable?.dispose()
             } else {
                 //没有网络继续走
@@ -293,7 +296,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     private fun timeDelay(): Int {
         attempts++
         return when (reconnectionPolicy) {
-            ReconnectionPolicy.FIXED_DELAY -> fixedDelay / 1000
+            ReconnectionManager.ReconnectionPolicy.FIXED_DELAY -> fixedDelay / 1000
             ReconnectionPolicy.RANDOM_INCREASING_DELAY ->
                 when {
                     attempts > 13 -> // between 2.5 and 7.5 minutes (~5 minutes)
@@ -303,6 +306,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                     else -> // 10 seconds
                         randomBase
                 }
+            else -> randomBase
         }
     }
 
