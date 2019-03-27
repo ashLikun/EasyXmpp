@@ -47,8 +47,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         @Synchronized
         get
 
-    @Synchronized
-    get
 
     var isReconnectAuthenticated = false
     private var attempts = 0
