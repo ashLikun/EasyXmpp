@@ -93,10 +93,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         //离线了,重新上线
         if (isReconnectUnavailable) {
             XmppUtils.loge("当前用户离线了" + it.toString())
-            if (this.weakRefConnection.get()?.isConnected == true) {
-                //更新为上线
-                XmppManage.getCM().userData.updateStateToAvailable()
-            }
             reconnect()
         } else {
             isReconnectUnavailable = true
@@ -115,10 +111,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         //心跳包失败,重新上线
         if (isReconnectUnavailable) {
             XmppUtils.loge("pingFailed当前用户离线了${XmppManage.getCM().userData}")
-            if (this.weakRefConnection.get()?.isConnected == true) {
-                //更新为上线
-                XmppManage.getCM().userData.updateStateToAvailable()
-            }
             reconnect()
         } else {
             isReconnectUnavailable = true
@@ -154,10 +146,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             }
             if (currentNetwork) {
                 val connection = weakRefConnection.get() ?: return@Consumer
+                XmppUtils.loge("重连中 isConnected = ${connection.isConnected}     isAuthenticated = ${connection.isAuthenticated}")
                 if (!connection.isConnected) {
                     connection.connect()
                 }
-                if (XmppManage.getCM().userData.isValid()) {
+                if (!connection.isAuthenticated && XmppManage.getCM().userData.isValid()) {
                     connection.login()
                     //上线
                     XmppManage.getCM().userData.updateStateToAvailable()
@@ -260,7 +253,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     }
 
     /**
-     * 重新连接
+     * 重新连接,并且重新登录
      * 请判断异常后再调用
      */
     @Synchronized
@@ -271,9 +264,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         val connection = this.weakRefConnection.get()
         if (connection == null) {
             XmppUtils.loge("Connection is null, will not reconnect")
-            return
-        }
-        if (connection.isConnected) {
             return
         }
         //是否正在运行重连  isDisposed = true 就是结束了
