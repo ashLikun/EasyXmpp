@@ -46,9 +46,16 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         private set
         @Synchronized
         get
+    /**
+     * 离线重连是否关闭
+     * true:开启
+     * false:暂时关闭关闭，关闭的时候在回掉后会设置成开启，也就是一次机会
+     */
+    var isReconnectUnavailable = true
+        @Synchronized
+        get
 
 
-    var isReconnectAuthenticated = false
     private var attempts = 0
     /**
      * 延时时间间隔秒
@@ -71,7 +78,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         }
 
         override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
-            isReconnectAuthenticated = true
         }
 
         override fun connectionClosedOnError(e: Exception) {
@@ -86,17 +92,32 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private val offlineListener = StanzaListener {
         //离线了,重新上线
-        XmppUtils.loge("当前用户离线了" + it.toString())
-        isReconnectAuthenticated = false
-        reconnect()
+        if (isReconnectUnavailable) {
+            XmppUtils.loge("当前用户离线了" + it.toString())
+            XmppManage.getCM().instantShutdown()
+            reconnect()
+        } else {
+            isReconnectUnavailable = true
+            //更新为上线
+            XmppManage.getCM().userData.updateStateToAvailable()
+            val connection = weakRefConnection.get()
+            if (connection != null) {
+                XmppUtils.runNew { PingManager.getInstanceFor(connection).pingServerIfNecessary() }
+            }
+        }
     }
     /**
      * 心跳包失败后再次启动
      */
     private val pingFailedListener = PingFailedListener {
         //心跳包失败,重新上线
-        XmppUtils.loge("pingFailed当前用户离线了${XmppManage.getCM().userData}")
-        isReconnectAuthenticated = false
+        if (isReconnectUnavailable) {
+            XmppUtils.loge("pingFailed当前用户离线了${XmppManage.getCM().userData}")
+            XmppManage.getCM().instantShutdown()
+            reconnect()
+        } else {
+            isReconnectUnavailable = true
+        }
         reconnect()
     }
 
@@ -129,11 +150,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             }
             if (currentNetwork) {
                 val connection = weakRefConnection.get() ?: return@Consumer
-                XmppUtils.loge("重连中 isConnected = ${connection.isConnected}     isAuthenticated = ${connection.isAuthenticated}    isReconnectAuthenticated = $isReconnectAuthenticated")
+                XmppUtils.loge("重连中 isConnected = ${connection.isConnected}     isAuthenticated = ${connection.isAuthenticated}")
                 if (!connection.isConnected) {
                     connection.connect()
                 }
-                if (!isReconnectAuthenticated && XmppManage.getCM().userData.isValid()) {
+                if (!connection.isAuthenticated && XmppManage.getCM().userData.isValid()) {
                     //登录
                     connection.login()
                     //上线

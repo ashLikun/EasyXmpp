@@ -115,6 +115,10 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
         XmppManage.getRM().reconnect()
     }
 
+    fun instantShutdown() {
+        XmppManage.getCM().connection?.instantShutdown()
+    }
+
     /**
      * 清空登录信息
      */
