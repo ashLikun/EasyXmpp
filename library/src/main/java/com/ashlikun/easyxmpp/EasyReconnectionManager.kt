@@ -7,7 +7,9 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
 import org.jivesoftware.smack.*
+import org.jivesoftware.smack.filter.AndFilter
 import org.jivesoftware.smack.filter.PresenceTypeFilter
+import org.jivesoftware.smack.filter.ToMatchesFilter
 import org.jivesoftware.smackx.ping.PingFailedListener
 import org.jivesoftware.smackx.ping.PingManager
 import java.lang.ref.WeakReference
@@ -23,7 +25,6 @@ import java.util.concurrent.TimeUnit
  * 功能介绍：重连机制
  */
 class EasyReconnectionManager private constructor(connection: AbstractXMPPConnection) {
-
     /**
      * 重连监听
      */
@@ -124,7 +125,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     init {
         if (isAutomaticReconnectEnabled) {
             //接收到服务器通知我离线的监听
-            connection.addAsyncStanzaListener(offlineListener, PresenceTypeFilter.UNAVAILABLE)
+            connection.addAsyncStanzaListener(offlineListener, AndFilter(PresenceTypeFilter.UNAVAILABLE, ToMatchesFilter.create(weakRefConnection?.get()?.user)))
             //心跳包失败后再次启动
             PingManager.getInstanceFor(connection).registerPingFailedListener(pingFailedListener)
             connection.addConnectionListener(connectionListener)
