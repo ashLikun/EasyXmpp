@@ -58,7 +58,6 @@ class EXmppConnectionManage internal constructor(var connection: XMPPTCPConnecti
 
     val domain: String
         get() = connection.xmppServiceDomain.domain.toString()
-        get() = connection.user
 
     /**
      * 连接服务器
