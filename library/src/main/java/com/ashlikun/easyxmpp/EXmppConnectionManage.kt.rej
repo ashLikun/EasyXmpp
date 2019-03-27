@@ -1,0 +1,9 @@
+diff a/library/src/main/java/com/ashlikun/easyxmpp/EXmppConnectionManage.kt b/library/src/main/java/com/ashlikun/easyxmpp/EXmppConnectionManage.kt	(rejected hunks)
+@@ -57,7 +57,6 @@
+         get() = connection.isConnected
+ 
+     val domain: String
+-        get() = connection.xmppServiceDomain.domain.toString()
+         get() = connection.user
+ 
+     /**
