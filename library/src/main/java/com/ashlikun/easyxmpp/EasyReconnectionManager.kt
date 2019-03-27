@@ -93,6 +93,10 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         //离线了,重新上线
         if (isReconnectUnavailable) {
             XmppUtils.loge("当前用户离线了" + it.toString())
+            if (this.weakRefConnection.get()?.isConnected == true) {
+                //更新为上线
+                XmppManage.getCM().userData.updateStateToAvailable()
+            }
             reconnect()
         } else {
             isReconnectUnavailable = true
@@ -111,6 +115,10 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         //心跳包失败,重新上线
         if (isReconnectUnavailable) {
             XmppUtils.loge("pingFailed当前用户离线了${XmppManage.getCM().userData}")
+            if (this.weakRefConnection.get()?.isConnected == true) {
+                //更新为上线
+                XmppManage.getCM().userData.updateStateToAvailable()
+            }
             reconnect()
         } else {
             isReconnectUnavailable = true
@@ -151,6 +159,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                 }
                 if (XmppManage.getCM().userData.isValid()) {
                     connection.login()
+                    //上线
+                    XmppManage.getCM().userData.updateStateToAvailable()
                 }
                 disposable?.dispose()
             } else {
