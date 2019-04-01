@@ -66,7 +66,11 @@ data class User(
                 //连接服务器
                 XmppManage.getCM().connection.connect()
             }
-            XmppManage.getCM().connection.login(userName, password)
+            if (isValid()) {
+                XmppManage.getCM().connection.login(userName, password)
+            } else {
+                bolock(this, false, SmackInvocationException("userName and password is valid?"))
+            }
             XmppManage.getCM().connection.isAuthenticated
         }
                 .subscribeOn(Schedulers.newThread())
