@@ -61,6 +61,10 @@ data class User(
     fun login(bolock: (user: User, isSuccess: Boolean, throwable: SmackInvocationException?) -> Unit) {
         Observable.just(1).map {
             saveInfo()
+            if (!XmppManage.isConnected()) {
+                //连接服务器
+                XmppManage.getCM().connect()
+            }
             XmppManage.getCM().connection.login(userName, password)
             XmppManage.getCM().connection.isAuthenticated
         }
