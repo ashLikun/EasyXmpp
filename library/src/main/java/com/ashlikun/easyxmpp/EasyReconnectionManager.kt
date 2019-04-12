@@ -7,7 +7,6 @@ import org.jivesoftware.smack.*
 import org.jivesoftware.smack.filter.AndFilter
 import org.jivesoftware.smack.filter.PresenceTypeFilter
 import org.jivesoftware.smack.filter.ToMatchesFilter
-import org.jivesoftware.smack.sasl.provided.SASLPlainMechanism
 import org.jivesoftware.smack.util.Async
 import org.jivesoftware.smackx.ping.PingFailedListener
 import org.jivesoftware.smackx.ping.PingManager
@@ -92,7 +91,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             if (!closeDisconnectOk) {
                 closeDisconnectOk = true
                 XmppManage.getCM().connection.disconnect()
-                SASLAuthentication.registerSASLMechanism(SASLPlainMechanism())
                 var e2 = SmackInvocationException(e)
                 if (e2.isErrorCanReconnect()) {
                     reconnect()
