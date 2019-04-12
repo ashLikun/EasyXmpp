@@ -2,20 +2,17 @@ package com.ashlikun.easyxmpp
 
 import android.accounts.NetworkErrorException
 import com.ashlikun.easyxmpp.listener.EasyReconnectionListener
-import io.reactivex.Observable
-import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
-import io.reactivex.schedulers.Schedulers
 import org.jivesoftware.smack.*
 import org.jivesoftware.smack.filter.AndFilter
 import org.jivesoftware.smack.filter.PresenceTypeFilter
 import org.jivesoftware.smack.filter.ToMatchesFilter
+import org.jivesoftware.smack.util.Async
 import org.jivesoftware.smackx.ping.PingFailedListener
 import org.jivesoftware.smackx.ping.PingManager
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.CopyOnWriteArraySet
-import java.util.concurrent.TimeUnit
 
 /**
  * @author　　: 李坤
@@ -68,7 +65,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private var isNetwork = true
 
-    var disposable: Disposable? = null
+    var thread: Thread? = null
+    var isCancel = false
 
 
     /**
@@ -133,50 +131,74 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     }
 
     /**
-     *重新连接的回调
+     * 重新连接的回调
      */
-    private val consumer = Consumer<Long> {
-        //到达指定时间，或者网络变化，那么久去连接
-        var currentNetwork = XmppUtils.isNetworkConnected()
-
-        if (it > delayTime || (!isNetwork && currentNetwork)) {
-            if (!isNetwork && currentNetwork) {
-                isNetwork = currentNetwork
-                //突然有网了得回掉时间为0
-                XmppUtils.runMain {
-                    for (listener in reconnectionListeners) {
-                        listener.reconnectionTime(0)
+    private val consumer = Runnable {
+        //是否取消
+        if (isCancel) {
+            //销毁定时器
+            thread = null
+            return@Runnable
+        }
+        try {
+            //延时时间间隔秒
+            delayTime = timeDelay()
+            //当前定时到的时间
+            var currentTime = 0
+            //到达指定时间，或者网络变化，那么久去连接
+            //循环定时
+            while (!(currentTime > delayTime || (!isNetwork && XmppUtils.isNetworkConnected()))) {
+                //休息1S
+                Thread.sleep(1000)
+                //时间没到 增加时间
+                currentTime++
+                XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
+                if (!reconnectionListeners.isEmpty()) {
+                    XmppUtils.runMain {
+                        reconnectionListeners.forEach { it.reconnectionTime((delayTime - currentTime)) }
                     }
                 }
             }
-            if (currentNetwork) {
-                val connection = weakRefConnection.get() ?: return@Consumer
+            if (!isNetwork && XmppUtils.isNetworkConnected()) {
+                currentTime = delayTime
+                isNetwork = XmppUtils.isNetworkConnected()
+                //突然有网了得回掉时间为0
+                XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
+                XmppUtils.runMain {
+                    reconnectionListeners.forEach { it.reconnectionTime(0) }
+                }
+            }
+            if (XmppUtils.isNetworkConnected()) {
+                if (weakRefConnection.get() == null) {
+                    //销毁定时器
+                    thread = null
+                }
+                val connection = weakRefConnection.get() ?: return@Runnable
                 XmppUtils.loge("重连中 isConnected = ${connection.isConnected}     isAuthenticated = ${connection.isAuthenticated}")
                 if (!connection.isConnected) {
                     connection.connect()
                 }
                 if (!connection.isAuthenticated && XmppManage.getCM().userData.isValid()) {
                     //登录
-                    connection.login()
+                    try {
+                        connection.login()
+                    } catch (e: SmackException.AlreadyLoggedInException) {
+                        //已经登录的异常过滤
+                    }
                     //上线
                     XmppManage.getCM().userData.updateStateToAvailable()
                 }
-                disposable?.dispose()
+                //销毁定时器
+                thread = null
             } else {
                 //没有网络继续走
                 throw NetworkErrorException("no network")
             }
-        } else {
-            //时间没到    回调
-            XmppUtils.loge("重连倒计时 ${delayTime - it}")
-            if (!reconnectionListeners.isEmpty()) {
-                XmppUtils.runMain {
-                    for (listener in reconnectionListeners) {
-                        listener.reconnectionTime((delayTime - it).toInt())
-                    }
-                }
-            }
+        } catch (e: Throwable) {
+            //错误
+            consumerError.accept(e)
         }
+
     }
     /**
      * 重新连接异常
@@ -186,15 +208,14 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         var exception = SmackInvocationException(t)
         if (!exception.isLoginConflict()) {
             if (XmppManage.get().config.isDebug) {
-                XmppUtils.loge(t.toString())
+                XmppUtils.loge("重新连接异常  $t")
             }
-            //回调
-            for (listener in reconnectionListeners) {
-                listener.reconnectionFailed(t)
+            XmppUtils.runMain {
+                reconnectionListeners.forEach { it.reconnectionFailed(t) }
             }
             reStart()
         } else {
-            disposable?.dispose()
+            thread = null
         }
     }
 
@@ -228,14 +249,10 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     private fun reStart() {
         //再次执行任务
         if (isReconnectionPossible()) {
-            //延时时间间隔秒
-            delayTime = timeDelay()
-            if (disposable?.isDisposed == false) {
-                disposable?.dispose()
-            }
-            disposable = Observable.interval(0, 1, TimeUnit.SECONDS)
-                    .observeOn(Schedulers.newThread())
-                    .subscribe(consumer, consumerError)
+            attempts = 0
+            isNetwork = XmppUtils.isNetworkConnected()
+            //执行任务
+            thread = Async.go(consumer)
         }
     }
 
@@ -272,16 +289,12 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             XmppUtils.loge("Connection is null, will not reconnect")
             return
         }
-        //是否正在运行重连  isDisposed = true 就是结束了
-        if (disposable?.isDisposed != false && isReconnectionPossible()) {
+        //是否正在运行重连
+        if (thread == null && isReconnectionPossible()) {
             attempts = 0
-            //延时时间间隔秒
-            delayTime = timeDelay()
             isNetwork = XmppUtils.isNetworkConnected()
             //执行任务,第一个先立马执行
-            Observable.just((delayTime + 1).toLong())
-                    .observeOn(Schedulers.newThread())
-                    .subscribe(consumer, consumerError)
+            thread = Async.go(consumer)
         }
     }
 
@@ -290,9 +303,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     @Synchronized
     fun cancel() {
-        if (disposable?.isDisposed == false) {
-            disposable?.dispose()
-        }
+        isCancel = false
     }
 
 
@@ -302,7 +313,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     private fun timeDelay(): Int {
         attempts++
         return when (reconnectionPolicy) {
-            ReconnectionManager.ReconnectionPolicy.FIXED_DELAY -> fixedDelay / 1000
+            ReconnectionPolicy.FIXED_DELAY -> fixedDelay / 1000
             ReconnectionPolicy.RANDOM_INCREASING_DELAY ->
                 when {
                     attempts > 13 -> // between 2.5 and 7.5 minutes (~5 minutes)
@@ -335,7 +346,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         init {
             XMPPConnectionRegistry.addConnectionCreationListener { connection ->
                 if (connection is AbstractXMPPConnection) {
-                    ReconnectionManager.getInstanceFor(connection)
+                    EasyReconnectionManager.getInstanceFor(connection)
                 }
             }
         }
