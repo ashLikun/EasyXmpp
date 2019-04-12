@@ -66,8 +66,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     private var isNetwork = true
 
     var thread: Thread? = null
-    var isCancel = false
-
+    private var runnable: MyRunnable? = null
 
     /**
      * 连接监听
@@ -137,79 +136,90 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
     /**
      * 重新连接的回调
      */
-    private val consumer = Runnable {
-        //是否取消
-        if (isCancel) {
-            //销毁定时器
-            thread = null
-            return@Runnable
-        }
-        try {
-            //延时时间间隔秒
-            delayTime = timeDelay()
-            //当前定时到的时间
-            var currentTime = 0
-            //到达指定时间，或者网络变化，那么久去连接
-            //循环定时
-            while (!(currentTime > delayTime || (!isNetwork && XmppUtils.isNetworkConnected()))) {
-                //是否取消
-                if (isCancel) {
-                    //销毁定时器
-                    thread = null
-                    return@Runnable
-                }
-                //休息1S
-                Thread.sleep(1000)
-                //时间没到 增加时间
-                XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
-                if (!reconnectionListeners.isEmpty()) {
-                    XmppUtils.runMain {
-                        reconnectionListeners.forEach { it.reconnectionTime((delayTime - currentTime)) }
-                    }
-                }
-                currentTime++
-            }
-            if (!isNetwork && XmppUtils.isNetworkConnected()) {
-                currentTime = delayTime
-                isNetwork = XmppUtils.isNetworkConnected()
-                //突然有网了得回掉时间为0
-                XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
-                XmppUtils.runMain {
-                    reconnectionListeners.forEach { it.reconnectionTime(0) }
-                }
-            }
-            if (XmppUtils.isNetworkConnected()) {
-                if (weakRefConnection.get() == null) {
-                    //销毁定时器
-                    thread = null
-                }
-                val connection = weakRefConnection.get() ?: return@Runnable
-                XmppUtils.loge("重连中 isConnected = ${connection.isConnected}     isAuthenticated = ${connection.isAuthenticated}")
-                if (!connection.isConnected) {
-                    connection.connect()
-                }
-                if (!connection.isAuthenticated && XmppManage.getCM().userData.isValid()) {
-                    //登录
-                    try {
-                        connection.login()
-                    } catch (e: SmackException.AlreadyLoggedInException) {
-                        //已经登录的异常过滤
-                    }
-                    //上线
-                    XmppManage.getCM().userData.updateStateToAvailable()
-                }
+    private abstract class MyRunnable : Runnable {
+        var isCancel = false
+    }
+
+    /**
+     * 重新连接的回调
+     */
+    private fun createRunable() = object : MyRunnable() {
+        override fun run() {
+            //是否取消
+            if (isCancel) {
                 //销毁定时器
                 thread = null
-            } else {
-                //没有网络继续走
-                throw NetworkErrorException("no network")
+                return
             }
-        } catch (e: Throwable) {
-            //错误
-            consumerError.accept(e)
+            try {
+                //延时时间间隔秒
+                delayTime = timeDelay()
+                //当前定时到的时间
+                var currentTime = 0
+                //到达指定时间，或者网络变化，那么久去连接
+                //循环定时
+                while (!(currentTime > delayTime || (!isNetwork && XmppUtils.isNetworkConnected()))) {
+                    //是否取消
+                    if (isCancel) {
+                        //销毁定时器
+                        thread = null
+                        return
+                    }
+                    //休息1S
+                    Thread.sleep(1000)
+                    //时间没到 增加时间
+                    XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
+                    if (!reconnectionListeners.isEmpty()) {
+                        XmppUtils.runMain {
+                            reconnectionListeners.forEach { it.reconnectionTime((delayTime - currentTime)) }
+                        }
+                    }
+                    currentTime++
+                }
+                if (!isNetwork && XmppUtils.isNetworkConnected()) {
+                    currentTime = delayTime
+                    isNetwork = XmppUtils.isNetworkConnected()
+                    //突然有网了得回掉时间为0
+                    XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
+                    XmppUtils.runMain {
+                        reconnectionListeners.forEach { it.reconnectionTime(0) }
+                    }
+                }
+                if (XmppUtils.isNetworkConnected()) {
+                    if (weakRefConnection.get() == null) {
+                        //销毁定时器
+                        thread = null
+                    }
+                    val connection = weakRefConnection.get() ?: return
+                    XmppUtils.loge("重连中 isConnected = ${connection.isConnected}     isAuthenticated = ${connection.isAuthenticated}")
+                    if (!connection.isConnected) {
+                        connection.connect()
+                    }
+                    if (!connection.isAuthenticated && XmppManage.getCM().userData.isValid()) {
+                        //登录
+                        try {
+                            connection.login()
+                        } catch (e: SmackException.AlreadyLoggedInException) {
+                            //已经登录的异常过滤
+                        }
+                        //上线
+                        XmppManage.getCM().userData.updateStateToAvailable()
+                    }
+                    //销毁定时器
+                    thread = null
+                } else {
+                    //没有网络继续走
+                    throw NetworkErrorException("no network")
+                }
+            } catch (e: Throwable) {
+                //错误
+                consumerError.accept(e)
+            }
         }
 
     }
+
+
     /**
      * 重新连接异常
      */
@@ -263,7 +273,11 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             attempts = 0
             isNetwork = XmppUtils.isNetworkConnected()
             //执行任务
-            consumer.run()
+            if (runnable == null) {
+                runnable?.isCancel = true
+                runnable = createRunable()
+            }
+            runnable?.run()
         }
     }
 
@@ -300,8 +314,9 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             attempts = 0
             isNetwork = XmppUtils.isNetworkConnected()
             //执行任务,第一个先立马执行
-            isCancel = false
-            thread = Async.go(consumer)
+            runnable?.isCancel = true
+            runnable = createRunable()
+            thread = Async.go(runnable)
         }
     }
 
@@ -310,7 +325,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     @Synchronized
     fun cancel() {
-        isCancel = true
+        runnable?.isCancel = true
     }
 
 
