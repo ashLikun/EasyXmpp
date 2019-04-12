@@ -38,7 +38,7 @@ object XmppUtils {
             //通过循环将网络信息逐个取出来
             for (i in networks.indices) {
                 val networkInfo = connMgr.getNetworkInfo(networks[i])
-                if (networkInfo.isConnected) {
+                if (networkInfo?.isConnected == true) {
                     isConnected = true
                     break
                 }
