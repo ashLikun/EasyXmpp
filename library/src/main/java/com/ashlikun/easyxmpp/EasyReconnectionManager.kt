@@ -73,6 +73,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private val connectionListener = object : AbstractConnectionListener() {
         override fun connectionClosed() {
+            XmppManage.getCM().connection.disconnect()
             //销毁定时器
             thread = null
         }
@@ -83,6 +84,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         override fun connectionClosedOnError(e: Exception) {
             //销毁定时器
             thread = null
+            XmppManage.getCM().connection.disconnect()
             var e2 = SmackInvocationException(e)
             if (e2.isErrorCanReconnect()) {
                 reconnect()
