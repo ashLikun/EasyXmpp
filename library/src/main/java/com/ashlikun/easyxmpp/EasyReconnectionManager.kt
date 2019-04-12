@@ -151,13 +151,14 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                 //休息1S
                 Thread.sleep(1000)
                 //时间没到 增加时间
-                currentTime++
+
                 XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
                 if (!reconnectionListeners.isEmpty()) {
                     XmppUtils.runMain {
                         reconnectionListeners.forEach { it.reconnectionTime((delayTime - currentTime)) }
                     }
                 }
+                currentTime++
             }
             if (!isNetwork && XmppUtils.isNetworkConnected()) {
                 currentTime = delayTime
@@ -248,7 +249,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
 
     private fun reStart() {
         //再次执行任务
-        if (isReconnectionPossible()) {
+        if (isAutomaticReconnectEnabled) {
+            XmppUtils.loge("重新启动重连定时器 ")
             attempts = 0
             isNetwork = XmppUtils.isNetworkConnected()
             //执行任务
@@ -268,12 +270,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
         connection?.removeConnectionListener(connectionListener)
     }
 
-    /**
-     * 是否可以重连
-     */
-    private fun isReconnectionPossible(): Boolean {
-        return (isAutomaticReconnectEnabled)
-    }
 
     /**
      * 重新连接,并且重新登录
@@ -290,7 +286,8 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             return
         }
         //是否正在运行重连
-        if (thread == null && isReconnectionPossible()) {
+        if (thread == null && isAutomaticReconnectEnabled) {
+            XmppUtils.loge("启动重连定时器 ")
             attempts = 0
             isNetwork = XmppUtils.isNetworkConnected()
             //执行任务,第一个先立马执行
@@ -324,7 +321,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                     else -> // 10 seconds
                         randomBase
                 }
-            else -> randomBase
         }
     }
 
