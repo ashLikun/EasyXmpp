@@ -157,7 +157,6 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                 //休息1S
                 Thread.sleep(1000)
                 //时间没到 增加时间
-
                 XmppUtils.loge("重连倒计时 ${delayTime - currentTime}")
                 if (!reconnectionListeners.isEmpty()) {
                     XmppUtils.runMain {
