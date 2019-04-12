@@ -68,28 +68,35 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
 
     var thread: Thread? = null
     private var runnable: MyRunnable? = null
-
+    private var closeDisconnectOk = false
     /**
      * 连接监听
      */
     private val connectionListener = object : AbstractConnectionListener() {
         override fun connectionClosed() {
-            XmppManage.getCM().connection.disconnect()
             //销毁定时器
             thread = null
         }
 
+        override fun connected(connection: XMPPConnection?) {
+            closeDisconnectOk = false
+        }
+
         override fun authenticated(connection: XMPPConnection?, resumed: Boolean) {
+            closeDisconnectOk = false
         }
 
         override fun connectionClosedOnError(e: Exception) {
             //销毁定时器
             thread = null
-            XmppManage.getCM().connection.disconnect()
-            SASLAuthentication.registerSASLMechanism( SASLPlainMechanism())
-            var e2 = SmackInvocationException(e)
-            if (e2.isErrorCanReconnect()) {
-                reconnect()
+            if (!closeDisconnectOk) {
+                closeDisconnectOk = true
+                XmppManage.getCM().connection.disconnect()
+                SASLAuthentication.registerSASLMechanism(SASLPlainMechanism())
+                var e2 = SmackInvocationException(e)
+                if (e2.isErrorCanReconnect()) {
+                    reconnect()
+                }
             }
         }
     }
