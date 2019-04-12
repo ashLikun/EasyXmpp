@@ -294,6 +294,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             attempts = 0
             isNetwork = XmppUtils.isNetworkConnected()
             //执行任务,第一个先立马执行
+            isCancel = false
             thread = Async.go(consumer)
         }
     }
@@ -303,7 +304,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     @Synchronized
     fun cancel() {
-        isCancel = false
+        isCancel = true
     }
 
 
