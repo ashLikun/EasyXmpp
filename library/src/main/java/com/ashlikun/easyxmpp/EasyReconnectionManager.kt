@@ -148,6 +148,12 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             //到达指定时间，或者网络变化，那么久去连接
             //循环定时
             while (!(currentTime > delayTime || (!isNetwork && XmppUtils.isNetworkConnected()))) {
+                //是否取消
+                if (isCancel) {
+                    //销毁定时器
+                    thread = null
+                    return@Runnable
+                }
                 //休息1S
                 Thread.sleep(1000)
                 //时间没到 增加时间
@@ -254,7 +260,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             attempts = 0
             isNetwork = XmppUtils.isNetworkConnected()
             //执行任务
-            thread = Async.go(consumer)
+            consumer.run()
         }
     }
 
