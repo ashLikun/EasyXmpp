@@ -148,20 +148,26 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
                     }
                 }
                 //同账号发送过来的消息
-                else if (XmppManage.getCM().userData.getUser() == chat?.xmppAddressOfChatPartner?.localpartOrNull?.toString()) {
+                if (XmppManage.getCM().userData.getUser() == from?.localpartOrNull?.toString()) {
                     //自己发送过来的,并且对方是正在聊天的人
-                    if (chatMessage.friendUsername == friendUsername) {
-                        sendListeners.forEach {
-                            it.onSendMessage(chat!!.xmppAddressOfChatPartner, message, chatMessage, messageChat)
+                    val fchat = XmppManage.getChatM().getChat(chatMessage.friendUsername ?: "")
+                    if (fchat != null) {
+                        //回调主线程
+                        XmppUtils.runMain {
+                            for (listener in sendListeners) {
+                                listener.onSendMessage(fchat!!.xmppAddressOfChatPartner, message, chatMessage, fchat)
+                            }
+                        }
+                    }
+                } else {
+                    //回调主线程
+                    XmppUtils.runMain {
+                        for (listener in receiveListeners) {
+                            listener.onReceiveMessage(from, message, chatMessage, chat)
                         }
                     }
                 }
-                //回调主线程
-                XmppUtils.runMain {
-                    for (listener in receiveListeners) {
-                        listener.onReceiveMessage(from, message, chatMessage, chat)
-                    }
-                }
+
             }
         }
     }
