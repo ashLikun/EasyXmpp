@@ -147,6 +147,15 @@ class ExMessageListener constructor(connection: XMPPTCPConnection, var chatManag
                         }
                     }
                 }
+                //同账号发送过来的消息
+                else if (XmppManage.getCM().userData.getUser() == chat?.xmppAddressOfChatPartner?.localpartOrNull?.toString()) {
+                    //自己发送过来的,并且对方是正在聊天的人
+                    if (chatMessage.friendUsername == friendUsername) {
+                        sendListeners.forEach {
+                            it.onSendMessage(chat!!.xmppAddressOfChatPartner, message, chatMessage, messageChat)
+                        }
+                    }
+                }
                 //回调主线程
                 XmppUtils.runMain {
                     for (listener in receiveListeners) {
