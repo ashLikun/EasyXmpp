@@ -44,9 +44,21 @@ class EasyChat constructor(var friendUsername: String) : ReceiveMessageListener,
     }
 
     override fun onReceiveMessage(from: EntityBareJid, message: Message, dbMessage: ChatMessage, messageChat: Chat) {
+        if (chat == null) {
+            return
+        }
         if (messageChat == chat) {
             receiveListeners.forEach {
                 it.onReceiveMessage(from, message, dbMessage, messageChat)
+            }
+        }
+        //同账号发送过来的消息
+        else if (XmppManage.getCM().userData.getUser() == chat?.xmppAddressOfChatPartner?.localpartOrNull?.toString()) {
+            //自己发送过来的,并且对方是正在聊天的人
+            if (dbMessage.friendUsername == friendUsername) {
+                sendListeners.forEach {
+                    it.onSendMessage(chat!!.xmppAddressOfChatPartner, message, dbMessage, messageChat)
+                }
             }
         }
     }
