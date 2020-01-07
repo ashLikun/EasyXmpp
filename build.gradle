@@ -24,6 +24,7 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 ext {
+    applicationId = "com.ashlikun.easyxmpp"
     superVersion = "27.1.1"
     compileSdkVersion = 27
     buildToolsVersion = "27.0.2"

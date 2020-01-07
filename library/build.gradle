@@ -4,7 +4,10 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
-
+    //https://deskid.github.io/2019/03/05/about-kotlin-module/
+    compileOptions {
+        kotlinOptions.freeCompilerArgs += ['-module-name', rootProject.ext.applicationId]
+    }
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
@@ -33,10 +36,8 @@ dependencies {
     compileOnly fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly 'io.reactivex.rxjava2:rxandroid:2.0.1'
     compileOnly 'io.reactivex.rxjava2:rxjava:x.y.z'
-    compileOnly 'org.igniterealtime.smack:smack-android:4.3.0'
-    compileOnly 'org.igniterealtime.smack:smack-tcp:4.3.0'
-    compileOnly 'org.igniterealtime.smack:smack-im:4.3.0'
-    compileOnly 'org.igniterealtime.smack:smack-extensions:4.3.0'
+    compileOnly 'org.igniterealtime.smack:smack-android:+'
+    compileOnly 'org.igniterealtime.smack:smack-tcp:+'
     compileOnly 'com.android.support:support-annotations:' + rootProject.ext.superVersion
     //数据库
     compileOnly 'com.github.ashLikun:LiteOrm:1.0.5'
