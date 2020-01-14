@@ -61,7 +61,7 @@ object XmppUtils {
     }
 
     fun runNew(id: Int, next: () -> Unit): Disposable {
-        return Observable.just(id).observeOn(Schedulers.newThread())
+        return Observable.just(id).observeOn(Schedulers.computation())
                 .subscribe { next() }
     }
 

@@ -2,12 +2,12 @@ package com.ashlikun.easyxmpp
 
 import android.accounts.NetworkErrorException
 import com.ashlikun.easyxmpp.listener.EasyReconnectionListener
+import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import org.jivesoftware.smack.*
 import org.jivesoftware.smack.filter.AndFilter
 import org.jivesoftware.smack.filter.PresenceTypeFilter
 import org.jivesoftware.smack.filter.ToMatchesFilter
-import org.jivesoftware.smack.util.Async
 import org.jivesoftware.smackx.ping.PingFailedListener
 import org.jivesoftware.smackx.ping.PingManager
 import java.lang.ref.WeakReference
@@ -65,7 +65,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
      */
     private var isNetwork = true
 
-    var thread: Thread? = null
+    var thread: Disposable? = null
     private var runnable: MyRunnable? = null
     private var closeDisconnectOk = false
     /**
@@ -286,7 +286,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
                 runnable?.isCancel = true
                 runnable = createRunable()
             }
-            runnable?.run()
+            thread = XmppUtils.runNew { runnable?.run() }
         }
     }
 
@@ -325,7 +325,7 @@ class EasyReconnectionManager private constructor(connection: AbstractXMPPConnec
             //执行任务,第一个先立马执行
             runnable?.isCancel = true
             runnable = createRunable()
-            thread = Async.go(runnable)
+            thread = XmppUtils.runNew { runnable?.run() }
         }
     }
 
