@@ -36,8 +36,9 @@ dependencies {
     compileOnly fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly 'io.reactivex.rxjava2:rxandroid:2.0.1'
     compileOnly 'io.reactivex.rxjava2:rxjava:x.y.z'
-    compileOnly 'org.igniterealtime.smack:smack-android:+'
-    compileOnly 'org.igniterealtime.smack:smack-tcp:+'
+    compileOnly 'org.igniterealtime.smack:smack-android:4.3.4'
+    compileOnly 'org.igniterealtime.smack:smack-tcp:4.3.4'
+    compileOnly 'org.igniterealtime.smack:smack-android-extensions:4.3.4'
     compileOnly 'com.android.support:support-annotations:' + rootProject.ext.superVersion
     //数据库
     compileOnly 'com.github.ashLikun:LiteOrm:1.0.5'
